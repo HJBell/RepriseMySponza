@@ -1,16 +1,25 @@
 #version 330
 
-struct LightSource
+struct PointLight
 {
 	vec3 position;
 	vec3 intensity;
 	float range;
 };
 
-uniform LightSource cpp_Lights[22];
-uniform int cpp_LightCount;
+struct DirectionalLight
+{
+	vec3 direction;
+	vec3 intensity;
+};
 
-uniform float cpp_AmbientIntensity;
+uniform int cpp_PointLightCount;
+uniform PointLight cpp_PointLights[22];
+
+uniform int cpp_DirectionalLightCount;
+uniform DirectionalLight cpp_DirectionalLights[22];
+
+uniform vec3 cpp_AmbientIntensity;
 uniform vec3 cpp_CameraPos;
 uniform vec3 cpp_Diffuse;
 uniform vec3 cpp_Specular;
@@ -25,42 +34,37 @@ out vec4 fs_Colour;
 
 
 
-
-//-----------------Get Diffuse Function-----------------
-
-vec4 GetDiffuse(vec3 L, vec3 N, vec3 lightIntensity, float rangeIntensity)
+vec4 ApplyPointLight(PointLight light, vec3 N)
 {
-	//Calculating the dot product of L and N and ensuring it doesn't go below zero.
-	float lDotN = max(0, dot(L, N));
+	// Creating a colour variable for the light.
+	vec4 colour = vec4(0.0);
 
-	//If the material has a diffuse texture, getting its colour at the current texture coord.
-	vec4 textureColour = texture(cpp_Texture, vs_TextureCoord);
+	vec3 L = light.position - vs_Position;
 
-	//Calculating the diffuse colour and returning it.
-	return textureColour * vec4(cpp_Diffuse * lDotN * lightIntensity * rangeIntensity, 1.0);
-}
+	//Calculating the distance between the light and the fragment position.
+	float distanceToLight = length(L);
 
+	//Calculating the intensity of the light based its distance from the fragment position.
+	float rangeIntensity = (1.0 - smoothstep(0, light.range, distanceToLight));
 
-//-----------------Get Specular Function-----------------
-
-vec4 GetSpecular(vec3 L, vec3 N, vec3 V, float rangeIntensity)
-{
-	//Checking the material has a shininess value.
-	if (cpp_Shininess <= 0) return vec4(0.0);
-
-	//Calculating specular term of the fragment.
-	float specularTerm = 0;
-	if (dot(N, L) > 0)
+	//Checking the fragment position is within range of the light.
+	if (rangeIntensity > 0.0)
 	{
-		//Calculating the half vector.
-		vec3 H = normalize(L + V);
+		//Calculating the dot product of L and N and ensuring it doesn't go below zero.
+		float lDotN = max(0.0, dot(normalize(L), N));
 
-		//Calculating specular term of the fragment.
-		if (dot(N, H) > 0) specularTerm = pow(max(dot(N, H), 0), cpp_Shininess);
+		//Calculating the diffuse colour and returning it.
+		colour = vec4(cpp_Diffuse * lDotN * light.intensity * rangeIntensity, 1.0);
 	}
 
-	//Calculating the specular colour and returning it.
-	return vec4(cpp_Shininess * specularTerm, cpp_Shininess * specularTerm, cpp_Shininess * specularTerm, 1.0) * rangeIntensity;
+	return colour;
+}
+
+vec4 ApplyDirectionalLight(DirectionalLight light, vec3 N)
+{
+	float lDotN = max(0.0, dot(light.direction, N));
+
+	return vec4(cpp_Diffuse * lDotN * light.intensity, 1.0);
 }
 
 
@@ -68,36 +72,23 @@ vec4 GetSpecular(vec3 L, vec3 N, vec3 V, float rangeIntensity)
 
 void main(void)
 {
-	//Creating a colour variable and beginning by simply adding the ambient light.
-	vec4 colour = vec4(cpp_AmbientIntensity, cpp_AmbientIntensity, cpp_AmbientIntensity, 1.0);
+	// Creating a colour variable and beginning by adding the ambient light.
+	vec4 colour = vec4(cpp_AmbientIntensity, 0.0);
 
-	//Calculating the normal and view vectors needed for the phong reflection model.
-	vec3 N = normalize(vs_Normal);
-	vec3 V = normalize(cpp_CameraPos - vs_Position);
+	// Calculating the normal and view vectors needed for the phong reflection model.
+	vec3 N = vs_Normal;
 
-	//Looping through the lights in the scene.
-	for (int i = 0; i < cpp_LightCount; i++)
-	{
-		//Calculating the distance between the light and the fragment position.
-		float distanceToLight = length(cpp_Lights[i].position - vs_Position);
+	// Applying the directional lights in the scene.
+	for (int i = 0; i < cpp_DirectionalLightCount; i++)
+		colour += ApplyDirectionalLight(cpp_DirectionalLights[i], N);
 
-		//Checking the fragment position is within range of the light.
-		if (distanceToLight <= cpp_Lights[i].range)
-		{
-			//Calculating the light vector.
-			vec3 L = normalize(cpp_Lights[i].position - vs_Position);
+	// Applying the point lights in the scene.
+	for (int i = 0; i < cpp_PointLightCount; i++)
+		colour += ApplyPointLight(cpp_PointLights[i], N);
 
-			//Calculating the intensity of the light based its distance from the fragment position.
-			float rangeIntensity = (1.0 - smoothstep(0, cpp_Lights[i].range, distanceToLight));
+	// Applying the texture for the fragment.
+	colour *= texture(cpp_Texture, vs_TextureCoord);
 
-			//Adding the diffuse colour to the fragment colour.
-			colour += GetDiffuse(L, N, cpp_Lights[i].intensity, rangeIntensity);
-
-			//Adding the specular colour to the fragment colour.
-			//colour += GetSpecular(L, N, V, rangeIntensity);
-		}
-	}
-
-	//Passing the fragment colour to OpenGL.
+	// Passing the fragment colour to OpenGL.
 	fs_Colour = clamp(colour, 0.0, 1.0);
 }

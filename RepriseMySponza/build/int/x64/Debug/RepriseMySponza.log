@@ -1,17 +1,10 @@
-﻿  Utils.cpp
-  MyView.cpp
+﻿  MyView.cpp
   No target GL version declared, defaulting to GL 3.3
   For example, use #define TGL_TARGET_GL_4_1 before including tgl.h to specify OpenGL 4.1
 source\MyView.cpp(2): warning C4067: unexpected tokens following preprocessor directive - expected a newline
-source\MyView.cpp(123): warning C4267: 'argument': conversion from 'size_t' to 'GLint', possible loss of data
-source\MyView.cpp(268): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-source\MyView.cpp(331): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
-  MyController.cpp
-  No target GL version declared, defaulting to GL 3.3
-  For example, use #define TGL_TARGET_GL_4_1 before including tgl.h to specify OpenGL 4.1
-  main.cpp
-  Generating Code...
+source\MyView.cpp(130): warning C4267: 'argument': conversion from 'size_t' to 'GLint', possible loss of data
+source\MyView.cpp(144): warning C4267: 'argument': conversion from 'size_t' to 'GLint', possible loss of data
+source\MyView.cpp(289): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+source\MyView.cpp(352): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
   RepriseMySponza.vcxproj -> C:\Users\p4014518\Desktop\RepriseMySponza\build\bin\x64\Debug\RepriseMySponza.exe
   RepriseMySponza.vcxproj -> C:\Users\p4014518\Desktop\RepriseMySponza\build\bin\x64\Debug\RepriseMySponza.pdb (Partial PDB)
-  Copying app files to build directory... assets\hex.png;C:\Users\p4014518\Desktop\RepriseMySponza\build\res\sponza_with_friends_2x.tcf;assets\hex.png;C:\Users\p4014518\Desktop\RepriseMySponza\external\bin\x64\nvToolsExt64_1.dll;C:\Users\p4014518\Desktop\RepriseMySponza\external\bin\x64\tcf.dll;C:\Users\p4014518\Desktop\RepriseMySponza\external\bin\x64\tsl.dll;C:\Users\p4014518\Desktop\RepriseMySponza\external\bin\x64\glfw3.dll;C:\Users\p4014518\Desktop\RepriseMySponza\external\bin\x64\tdl.dll;doc\readme.txt
-  Copying shader files to build directory... shaders\reprise_fs.glsl;shaders\reprise_vs.glsl

@@ -43,6 +43,7 @@ void MyView::windowViewWillStart(tygra::Window * window)
 
 	// Loading textures.
 	LoadTexture("resource:///hex.png");
+	LoadTexture("resource:///marble.png");
 
 	// Enabling the OpenGL depth test.
 	glEnable(GL_DEPTH_TEST);
@@ -74,6 +75,12 @@ void MyView::windowViewDidStop(tygra::Window * window)
 {
 	// Deleting the shader program.
 	glDeleteProgram(shaderProgram);
+
+	// Deleting the textures.
+	for (auto tex : textures)
+	{
+		glDeleteTextures(1, &tex.second);
+	}
 
 	// Deleting the buffers for each mesh.
 	for (auto mesh : meshes)
@@ -116,21 +123,35 @@ void MyView::windowViewRender(tygra::Window * window)
 	glUniform3fv(glGetUniformLocation(shaderProgram, "cpp_AmbientIntensity"), 1, glm::value_ptr(Utils::SponzaToGLMVec3(scene_->getAmbientLightIntensity())));
 	glUniform3fv(glGetUniformLocation(shaderProgram, "cpp_CameraPos"), 1, glm::value_ptr(camPos));
 
-	// Populating the light uniform variables.
-	const auto lights = scene_->getAllPointLights();
-	const auto maxLightsAllowed = 22;
-	const auto lightCount = (lights.size() <= maxLightsAllowed) ? lights.size() : maxLightsAllowed;
-	glUniform1i(glGetUniformLocation(shaderProgram, "cpp_LightCount"), lightCount);
-	for (unsigned i = 0; i < lightCount; i++)
+	// Populating the directional light uniform variables.
+	const auto directionalLights = scene_->getAllDirectionalLights();
+	const auto maxDirectionalLightsAllowed = 22;
+	const auto directionalLightCount = (directionalLights.size() <= maxDirectionalLightsAllowed) ? directionalLights.size() : maxDirectionalLightsAllowed;
+	glUniform1i(glGetUniformLocation(shaderProgram, "cpp_DirectionalLightCount"), directionalLightCount);
+	for (unsigned i = 0; i < directionalLightCount; i++)
 	{
-		auto positionName = "cpp_Lights[" + std::to_string(i) + "].position";
-		glUniform3fv(glGetUniformLocation(shaderProgram, positionName.c_str()), 1, glm::value_ptr(Utils::SponzaToGLMVec3(lights[i].getPosition())));
+		auto directionName = "cpp_DirectionalLights[" + std::to_string(i) + "].direction";
+		glUniform3fv(glGetUniformLocation(shaderProgram, directionName.c_str()), 1, glm::value_ptr(Utils::SponzaToGLMVec3(directionalLights[i].getDirection())));
 
-		auto intensityName = "cpp_Lights[" + std::to_string(i) + "].intensity";
-		glUniform3fv(glGetUniformLocation(shaderProgram, intensityName.c_str()), 1, glm::value_ptr(Utils::SponzaToGLMVec3(lights[i].getIntensity())));
+		auto intensityName = "cpp_DirectionalLights[" + std::to_string(i) + "].intensity";
+		glUniform3fv(glGetUniformLocation(shaderProgram, intensityName.c_str()), 1, glm::value_ptr(Utils::SponzaToGLMVec3(directionalLights[i].getIntensity())));
+	}
 
-		auto rangeName = "cpp_Lights[" + std::to_string(i) + "].range";
-		glUniform1f(glGetUniformLocation(shaderProgram, rangeName.c_str()), lights[i].getRange());
+	// Populating the point light uniform variables.
+	const auto pointLights = scene_->getAllPointLights();
+	const auto maxPointLightsAllowed = 22;
+	const auto pointLightCount = (pointLights.size() <= maxPointLightsAllowed) ? pointLights.size() : maxPointLightsAllowed;
+	glUniform1i(glGetUniformLocation(shaderProgram, "cpp_PointLightCount"), pointLightCount);
+	for (unsigned i = 0; i < pointLightCount; i++)
+	{
+		auto positionName = "cpp_PointLights[" + std::to_string(i) + "].position";
+		glUniform3fv(glGetUniformLocation(shaderProgram, positionName.c_str()), 1, glm::value_ptr(Utils::SponzaToGLMVec3(pointLights[i].getPosition())));
+
+		auto intensityName = "cpp_PointLights[" + std::to_string(i) + "].intensity";
+		glUniform3fv(glGetUniformLocation(shaderProgram, intensityName.c_str()), 1, glm::value_ptr(Utils::SponzaToGLMVec3(pointLights[i].getIntensity())));
+
+		auto rangeName = "cpp_PointLights[" + std::to_string(i) + "].range";
+		glUniform1f(glGetUniformLocation(shaderProgram, rangeName.c_str()), pointLights[i].getRange());
 	}
 
 	// Looping through all instances in the scene and drawing them.
@@ -153,7 +174,7 @@ void MyView::windowViewRender(tygra::Window * window)
 		glUniform1f(glGetUniformLocation(shaderProgram, "cpp_Specular"), material.getShininess());
 		
 		// Populating the texture uniform variabes.
-		bool diffuseTextureSet = SetShaderTexture("resource:///hex.png", shaderProgram, "cpp_Texture", GL_TEXTURE0, 0);
+		bool diffuseTextureSet = SetShaderTexture("resource:///marble.png", shaderProgram, "cpp_Texture", GL_TEXTURE0, 0);
 
 		// Getting the mesh of the current instance.
 		const MeshGL& mesh = meshes[instance.getMeshId()];
@@ -291,8 +312,8 @@ void MyView::loadMeshData()
 		glEnableVertexAttribArray(2);
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), TGL_BUFFER_OFFSET(0));
 
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);		
 	}
 }
 

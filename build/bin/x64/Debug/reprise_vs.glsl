@@ -13,8 +13,8 @@ out vec2 vs_TextureCoord;
 
 void main(void)
 {
-	vs_Position = mat3(cpp_ModelXform) * cpp_VertexPosition;
-	vs_Normal = normalize(mat3(cpp_ModelXform) * cpp_VertexNormal);
+	vs_Position = (cpp_ModelXform * vec4(cpp_VertexPosition, 1.0)).xyz;
+	vs_Normal = normalize(cpp_ModelXform * vec4(cpp_VertexNormal, 0.0)).xyz;
 	vs_TextureCoord = cpp_TextureCoord;
 	gl_Position = cpp_MVPXform * vec4(cpp_VertexPosition, 1.0);
 }
