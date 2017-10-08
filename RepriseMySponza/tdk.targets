@@ -4,6 +4,7 @@
     <TdkDocFiles Include="$(TdkLocalDocSubPath)**/*.*"/>
     <TdkResFiles Include="$(TdkLocalResSubPath)**/*.*"/>
     <TdkIncFiles Include="$(TdkLocalIncSubPath)**/*.*"/>
+    <TdkAppFiles Include="@(TdkResFiles)"/>
     <TdkAppFiles Include="@(TdkRes)"/>
 	<TdkAppFiles Include="@(TdkDll)"/>
 	<TdkAppFiles Include="@(TdkDocFiles)"/>
