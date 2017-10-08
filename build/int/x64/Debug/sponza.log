@@ -1,0 +1,17 @@
+﻿  SpotLight.cpp
+  PointLight.cpp
+  Mesh.cpp
+  Material.cpp
+  Instance.cpp
+  GeometryBuilder.cpp
+src\GeometryBuilder.cpp(69): warning C4267: 'argument': conversion from 'size_t' to 'sponza::MeshId', possible loss of data
+  DirectionalLight.cpp
+  Context.cpp
+src\Context.cpp(96): warning C4267: 'argument': conversion from 'size_t' to 'sponza::InstanceId', possible loss of data
+src\Context.cpp(97): warning C4267: 'argument': conversion from 'size_t' to 'sponza::MeshId', possible loss of data
+  Camera.cpp
+  Generating Code...
+  sponza.vcxproj -> C:\Users\p4014518\Desktop\Reprise My Sponza - 0.0.0\build\lib\x64\Debug\v141\sponza.lib
+  Copying doc files to build directory... doc\sponza-license.txt;doc\sponza.lib.props
+  Copying include files to build directory... include\sponza\Camera.hpp;include\sponza\config.hpp;include\sponza\Context.hpp;include\sponza\DirectionalLight.hpp;include\sponza\GeometryBuilder.hpp;include\sponza\Instance.hpp;include\sponza\Material.hpp;include\sponza\Mesh.hpp;include\sponza\PointLight.hpp;include\sponza\sponza.hpp;include\sponza\sponza_fwd.hpp;include\sponza\SpotLight.hpp;include\sponza\types.hpp
+  Copying resource files to build directory... res\sponza_with_friends_2x.tcf

@@ -1,0 +1,8 @@
+﻿cl : Command line warning D9007: '/Gm' requires '/Zi or /ZI'; option ignored
+  MyView.cpp
+  No target GL version declared, defaulting to GL 3.3
+  For example, use #define TGL_TARGET_GL_4_1 before including tgl.h to specify OpenGL 4.1
+source\MyView.cpp(2): warning C4067: unexpected tokens following preprocessor directive - expected a newline
+source\MyView.cpp(241): warning C4018: '<': signed/unsigned mismatch
+  RepriseMySponza.vcxproj -> C:\Users\p4014518\Desktop\Reprise My Sponza - 0.0.5\build\bin\Win32\Debug\RepriseMySponza.exe
+  RepriseMySponza.vcxproj -> C:\Users\p4014518\Desktop\Reprise My Sponza - 0.0.5\build\bin\Win32\Debug\RepriseMySponza.pdb (Partial PDB)
