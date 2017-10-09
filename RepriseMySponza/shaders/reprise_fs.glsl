@@ -1,5 +1,11 @@
 #version 330
 
+struct DirectionalLight
+{
+	vec3 direction;
+	vec3 intensity;
+};
+
 struct PointLight
 {
 	vec3 position;
@@ -7,10 +13,13 @@ struct PointLight
 	float range;
 };
 
-struct DirectionalLight
+struct SpotLight
 {
-	vec3 direction;
+	vec3 position;
 	vec3 intensity;
+	float range;
+	float angle;
+	vec3 direction;
 };
 
 uniform int cpp_PointLightCount;
@@ -18,6 +27,9 @@ uniform PointLight cpp_PointLights[22];
 
 uniform int cpp_DirectionalLightCount;
 uniform DirectionalLight cpp_DirectionalLights[22];
+
+uniform int cpp_SpotLightCount;
+uniform SpotLight cpp_SpotLights[22];
 
 uniform vec3 cpp_AmbientIntensity;
 uniform vec3 cpp_CameraPos;
@@ -33,6 +45,13 @@ in vec2 vs_TextureCoord;
 out vec4 fs_Colour;
 
 
+
+vec4 ApplyDirectionalLight(DirectionalLight light, vec3 N)
+{
+	float lDotN = max(0.0, dot(light.direction, N));
+
+	return vec4(cpp_Diffuse * lDotN * light.intensity, 1.0);
+}
 
 vec4 ApplyPointLight(PointLight light, vec3 N)
 {
@@ -60,11 +79,32 @@ vec4 ApplyPointLight(PointLight light, vec3 N)
 	return colour;
 }
 
-vec4 ApplyDirectionalLight(DirectionalLight light, vec3 N)
+vec4 ApplySpotLight(SpotLight light, vec3 N)
 {
-	float lDotN = max(0.0, dot(light.direction, N));
+	// Creating a colour variable for the light.
+	vec4 colour = vec4(0.0);
 
-	return vec4(cpp_Diffuse * lDotN * light.intensity, 1.0);
+	vec3 lightDirection = normalize(light.direction);
+	vec3 rayDirection = normalize(vs_Position - light.position);
+
+	float angleBetweenLightAndRay = degrees(abs(dot(lightDirection, rayDirection)));
+
+	if (angleBetweenLightAndRay > light.angle * 0.5)
+	{
+
+		// Point light calculation
+		vec3 L = light.position - vs_Position;
+		float distanceToLight = length(L);
+		float rangeIntensity = (1.0 - smoothstep(0, light.range, distanceToLight));
+		if (rangeIntensity > 0.0)
+		{
+			float lDotN = max(0.0, dot(normalize(L), N));
+			colour = vec4(cpp_Diffuse * lDotN * light.intensity * rangeIntensity, 1.0);
+		}
+
+	}
+
+	return colour;
 }
 
 
@@ -85,6 +125,10 @@ void main(void)
 	// Applying the point lights in the scene.
 	for (int i = 0; i < cpp_PointLightCount; i++)
 		colour += ApplyPointLight(cpp_PointLights[i], N);
+
+	// Applying the spot lights in the scene.
+	for (int i = 0; i < cpp_SpotLightCount; i++)
+		colour += ApplySpotLight(cpp_SpotLights[i], N);
 
 	// Applying the texture for the fragment.
 	colour *= texture(cpp_Texture, vs_TextureCoord);

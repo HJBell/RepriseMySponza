@@ -154,6 +154,29 @@ void MyView::windowViewRender(tygra::Window * window)
 		glUniform1f(glGetUniformLocation(shaderProgram, rangeName.c_str()), pointLights[i].getRange());
 	}
 
+	// Populating the spot light uniform variables.
+	const auto spotLights = scene_->getAllSpotLights();
+	const auto maxSpotLightsAllowed = 22;
+	const auto spotLightCount = (spotLights.size() <= maxSpotLightsAllowed) ? spotLights.size() : maxSpotLightsAllowed;
+	glUniform1i(glGetUniformLocation(shaderProgram, "cpp_SpotLightCount"), spotLightCount);
+	for (unsigned i = 0; i < spotLightCount; i++)
+	{
+		auto positionName = "cpp_SpotLights[" + std::to_string(i) + "].position";
+		glUniform3fv(glGetUniformLocation(shaderProgram, positionName.c_str()), 1, glm::value_ptr(Utils::SponzaToGLMVec3(spotLights[i].getPosition())));
+
+		auto intensityName = "cpp_SpotLights[" + std::to_string(i) + "].intensity";
+		glUniform3fv(glGetUniformLocation(shaderProgram, intensityName.c_str()), 1, glm::value_ptr(Utils::SponzaToGLMVec3(spotLights[i].getIntensity())));
+
+		auto rangeName = "cpp_SpotLights[" + std::to_string(i) + "].range";
+		glUniform1f(glGetUniformLocation(shaderProgram, rangeName.c_str()), spotLights[i].getRange());
+
+		auto angleName = "cpp_SpotLights[" + std::to_string(i) + "].angle";
+		glUniform1f(glGetUniformLocation(shaderProgram, angleName.c_str()), spotLights[i].getConeAngleDegrees());
+
+		auto directionName = "cpp_SpotLights[" + std::to_string(i) + "].direction";
+		glUniform3fv(glGetUniformLocation(shaderProgram, directionName.c_str()), 1, glm::value_ptr(Utils::SponzaToGLMVec3(spotLights[i].getDirection())));
+	}
+
 	// Looping through all instances in the scene and drawing them.
 	for (auto& instance : scene_->getAllInstances())
 	{
