@@ -36,7 +36,7 @@ void MyView::windowViewWillStart(tygra::Window * window)
     assert(scene_ != nullptr);
 
 	// Loading the shader program.
-	shaderProgram = loadShaderProgram("resource:///reprise_vs.glsl", "resource:///reprise_fs.glsl");
+	shaderProgram = loadShaderProgram(vertexShaderPath, fragmentShaderPath);
 
 	// Load the mesh data.
 	loadMeshData();
@@ -392,4 +392,12 @@ bool MyView::SetShaderTexture(std::string name, GLuint shaderProgram, std::strin
 		return true;
 	}
 	return false;
+}
+
+void MyView::RecompileShaders()
+{
+	std::cout << "Recompiling Shaders..." << std::endl;
+	glDeleteProgram(shaderProgram);
+	shaderProgram = loadShaderProgram(vertexShaderPath, fragmentShaderPath);
+	glUseProgram(shaderProgram);
 }

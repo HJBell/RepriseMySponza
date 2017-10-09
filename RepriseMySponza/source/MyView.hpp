@@ -32,12 +32,15 @@ public: // Functions.
     MyView();
     ~MyView();
     void setScene(const sponza::Context * sponza);
+	void RecompileShaders();
 
 private: // Members.
 	const sponza::Context * scene_;
 	GLuint shaderProgram;
 	std::map<sponza::MeshId, MeshGL> meshes;
 	std::map<std::string, GLuint> textures;
+	std::string	vertexShaderPath = "resource:///reprise_vs.glsl";
+	std::string	fragmentShaderPath = "resource:///reprise_fs.glsl";
 
 private: // Functions.
     void windowViewWillStart(tygra::Window * window) override;
@@ -49,5 +52,6 @@ private: // Functions.
 	void loadMeshData();
 	void LoadTexture(std::string name);
 	bool SetShaderTexture(std::string name, GLuint shaderProgram, std::string targetName, GLenum activeTexture, int index);
+	
 };
 

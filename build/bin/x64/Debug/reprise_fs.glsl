@@ -46,71 +46,77 @@ out vec4 fs_Colour;
 
 
 
-vec4 ApplyDirectionalLight(DirectionalLight light, vec3 N)
+vec4 ApplyDirectionalLight(DirectionalLight light)
 {
-	float lDotN = max(0.0, dot(light.direction, N));
+	// Calculating the intensity of the light due to the angle it hits the fragment.
+	float angleIntensity = max(0.0, dot(light.direction, vs_Normal));
 
-	return vec4(cpp_Diffuse * lDotN * light.intensity, 1.0);
+	// Calculating and returning the final colour.
+	return vec4(cpp_Diffuse * angleIntensity * light.intensity, 1.0);
 }
 
-vec4 ApplyPointLight(PointLight light, vec3 N)
+vec4 ApplyPointLight(PointLight light)
 {
-	// Creating a colour variable for the light.
+	// Creating an empty colour variable for the light.
 	vec4 colour = vec4(0.0);
 
-	vec3 L = light.position - vs_Position;
+	// Calculting the vector from the fragment to the light.
+	vec3 fragmentToLight = light.position - vs_Position;
 
-	//Calculating the distance between the light and the fragment position.
-	float distanceToLight = length(L);
+	// Calculating the distance between the light and the fragment.
+	float distanceToLight = length(fragmentToLight);
 
-	//Calculating the intensity of the light based its distance from the fragment position.
+	// Using smoothstep to calculate the intensity of the light based on its range.
 	float rangeIntensity = (1.0 - smoothstep(0, light.range, distanceToLight));
 
-	//Checking the fragment position is within range of the light.
+	// Checking the fragment is within range of the light.
 	if (rangeIntensity > 0.0)
 	{
-		//Calculating the dot product of L and N and ensuring it doesn't go below zero.
-		float lDotN = max(0.0, dot(normalize(L), N));
+		// Calculating the intensity of the light due to the angle it hits the fragment.
+		float angleIntensity = max(0.0, dot(normalize(fragmentToLight), vs_Normal));
 
-		//Calculating the diffuse colour and returning it.
-		colour = vec4(cpp_Diffuse * lDotN * light.intensity * rangeIntensity, 1.0);
+		// Calculating the final colour value.
+		colour = vec4(cpp_Diffuse * angleIntensity * light.intensity * rangeIntensity, 1.0);
 	}
 
+	// Returning the colour.
 	return colour;
 }
 
-vec4 ApplySpotLight(SpotLight light, vec3 N)
+vec4 ApplySpotLight(SpotLight light)
 {
-	// Creating a colour variable for the light.
+	// Creating an empty colour variable for the light.
 	vec4 colour = vec4(0.0);
 
-
-
+	// Normalising the forward direction of the light.
 	vec3 lightDirection = normalize(light.direction);
-	vec3 rayDirection = normalize(vs_Position - light.position);
 
-	float angleBetweenLightAndRay = degrees(abs(dot(lightDirection, rayDirection)));
+	// Calculating the direction from the light to the fragment.
+	vec3 lightToFragment = vs_Position - light.position;
 
+	// Calculating the angle between the 'lightDirection' and 'lightToFragment' vectors.
+	float angleBetweenLightAndRay = degrees(dot(lightDirection, normalize(lightToFragment)));
+
+	// Checking if the fragment is in the light cone.
 	if (angleBetweenLightAndRay > light.angle * 0.5)
 	{
+		// Calculating the distance between the fragment and the light.
+		float distanceToLight = length(-lightToFragment);
 
-
-		// Point light calculation
-		vec3 L = light.position - vs_Position;
-		float distanceToLight = length(L);
+		// Using smoothstep to calculate the intensity of the light based on its range.
 		float rangeIntensity = (1.0 - smoothstep(0, light.range, distanceToLight));
+
+		// Checking the fragment is within range of the light.
 		if (rangeIntensity > 0.0)
 		{
-			float lDotN = max(0.0, dot(normalize(L), N));
-			colour = vec4(cpp_Diffuse * lDotN * light.intensity * rangeIntensity, 1.0);
+			// Calculating the intensity of the light due to the angle it hits the fragment.
+			float angleIntensity = max(0.0, dot(normalize(-lightToFragment), vs_Normal));
+
+			// Calculating the final colour value.
+			colour = vec4(cpp_Diffuse * angleIntensity * light.intensity * rangeIntensity, 1.0);
 		}
-
-
-
 	}
-
-
-
+	// Returning the colour.
 	return colour;
 }
 
@@ -123,19 +129,19 @@ void main(void)
 	vec4 colour = vec4(cpp_AmbientIntensity, 0.0);
 
 	// Calculating the normal and view vectors needed for the phong reflection model.
-	vec3 N = vs_Normal;
+	vec3 vs_Normal = vs_Normal;
 
 	// Applying the directional lights in the scene.
 	for (int i = 0; i < cpp_DirectionalLightCount; i++)
-		colour += ApplyDirectionalLight(cpp_DirectionalLights[i], N);
+		colour += ApplyDirectionalLight(cpp_DirectionalLights[i]);
 
 	// Applying the point lights in the scene.
 	for (int i = 0; i < cpp_PointLightCount; i++)
-		colour += ApplyPointLight(cpp_PointLights[i], N);
+		colour += ApplyPointLight(cpp_PointLights[i]);
 
 	// Applying the spot lights in the scene.
 	for (int i = 0; i < cpp_SpotLightCount; i++)
-		colour += ApplySpotLight(cpp_SpotLights[i], N);
+		colour += ApplySpotLight(cpp_SpotLights[i]);
 
 	// Applying the texture for the fragment.
 	colour *= texture(cpp_Texture, vs_TextureCoord);
