@@ -9,6 +9,56 @@
 #include <memory>
 #include <map>
 
+struct DirectionalLight
+{
+	glm::vec3 direction;
+	float PADDING1;
+	glm::vec3 intensity;
+	float PADDING2;
+};
+
+struct PointLight
+{
+	glm::vec3 position;
+	float range;
+	glm::vec3 intensity;
+	float PADDING0;
+};
+
+struct SpotLight
+{
+	glm::vec3 position;
+	float range;
+	glm::vec3 intensity;
+	float angle;
+	glm::vec3 direction;
+	float PADDING0;
+};
+
+struct PerFrameUniforms
+{
+	glm::vec3 cameraPos;
+	float PADDING0;
+	glm::vec3 ambientIntensity;
+	float PADDING1;
+	DirectionalLight directionalLights[32];
+	int directionalLightCount;
+	float PADDING2[3];
+	PointLight pointLights[32];
+	int pointLightCount;
+	float PADDING3[3];
+	SpotLight spotLights[32];
+	int spotLightCount;
+};
+
+struct PerModelUniforms
+{
+	glm::mat4 mvpXform;
+	glm::mat4 modelXform;
+	glm::vec3 diffuse;
+	float shininess;
+	glm::vec3 specular;
+};
 
 struct MeshGL
 {
@@ -39,8 +89,13 @@ private: // Members.
 	GLuint shaderProgram;
 	std::map<sponza::MeshId, MeshGL> meshes;
 	std::map<std::string, GLuint> textures;
+
+	GLuint perFrameUniformsUBO;
+	GLuint perModelUniformsUBO;
+
 	std::string	vertexShaderPath = "resource:///reprise_vs.glsl";
 	std::string	fragmentShaderPath = "resource:///reprise_fs.glsl";
+	int maxLightsPerType = 32;
 
 private: // Functions.
     void windowViewWillStart(tygra::Window * window) override;
@@ -50,8 +105,8 @@ private: // Functions.
 	GLuint loadShaderProgram(std::string vertexShaderPath, std::string fragmentShaderPath) const;
 	GLuint loadShader(std::string shaderPath, GLuint shaderType) const;
 	void loadMeshData();
-	void LoadTexture(std::string name);
-	bool SetShaderTexture(std::string name, GLuint shaderProgram, std::string targetName, GLenum activeTexture, int index);
-	
+	void loadTexture(std::string name);
+	bool setShaderTexture(std::string name, GLuint shaderProgram, std::string targetName, GLenum activeTexture, int index);
+	void createUniformBufferObjects();
 };
 

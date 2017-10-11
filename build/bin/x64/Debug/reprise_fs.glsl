@@ -9,33 +9,55 @@ struct DirectionalLight
 struct PointLight
 {
 	vec3 position;
-	vec3 intensity;
 	float range;
+	vec3 intensity;
 };
 
 struct SpotLight
 {
 	vec3 position;
-	vec3 intensity;
 	float range;
+	vec3 intensity;
 	float angle;
 	vec3 direction;
 };
 
-uniform int cpp_PointLightCount;
-uniform PointLight cpp_PointLights[22];
+layout (std140) uniform cpp_PerFrameUniforms
+{
+	vec3 cpp_CameraPos;
+	vec3 cpp_AmbientIntensity;
+	DirectionalLight cpp_DirectionalLights[32];
+	int cpp_DirectionalLightCount;
+	PointLight cpp_PointLights[32];
+	int cpp_PointLightCount;
+	SpotLight cpp_SpotLights[32];
+	int cpp_SpotLightCount;
+};
 
-uniform int cpp_DirectionalLightCount;
-uniform DirectionalLight cpp_DirectionalLights[22];
+layout(std140) uniform cpp_PerModelUniforms
+{
+	mat4 cpp_MVPXform;
+	mat4 cpp_ModelXform;
+	vec3 cpp_Diffuse;
+	float cpp_Shininess;
+	vec3 cpp_Specular;
+};
 
-uniform int cpp_SpotLightCount;
-uniform SpotLight cpp_SpotLights[22];
+//uniform int cpp_PointLightCount;
+//uniform PointLight cpp_PointLights[22];
 
-uniform vec3 cpp_AmbientIntensity;
-uniform vec3 cpp_CameraPos;
-uniform vec3 cpp_Diffuse;
-uniform vec3 cpp_Specular;
-uniform float cpp_Shininess;
+//uniform int cpp_DirectionalLightCount;
+//uniform DirectionalLight cpp_DirectionalLights[22];
+
+//uniform int cpp_SpotLightCount;
+//uniform SpotLight cpp_SpotLights[22];
+
+//uniform vec3 cpp_AmbientIntensity;
+//uniform vec3 cpp_CameraPos;
+//uniform vec3 cpp_Diffuse;
+//uniform vec3 cpp_Specular;
+//uniform float cpp_Shininess;
+
 uniform sampler2D cpp_Texture;
 
 in vec3 vs_Position;
@@ -127,9 +149,6 @@ void main(void)
 {
 	// Creating a colour variable and beginning by adding the ambient light.
 	vec4 colour = vec4(cpp_AmbientIntensity, 0.0);
-
-	// Calculating the normal and view vectors needed for the phong reflection model.
-	vec3 vs_Normal = vs_Normal;
 
 	// Applying the directional lights in the scene.
 	for (int i = 0; i < cpp_DirectionalLightCount; i++)

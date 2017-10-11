@@ -1,5 +1,3 @@
-﻿  MyController.cpp
-  No target GL version declared, defaulting to GL 3.3
-  For example, use #define TGL_TARGET_GL_4_1 before including tgl.h to specify OpenGL 4.1
-  RepriseMySponza.vcxproj -> C:\Users\p4014518\Desktop\RepriseMySponza\build\bin\x64\Debug\RepriseMySponza.exe
+﻿  RepriseMySponza.vcxproj -> C:\Users\p4014518\Desktop\RepriseMySponza\build\bin\x64\Debug\RepriseMySponza.exe
   RepriseMySponza.vcxproj -> C:\Users\p4014518\Desktop\RepriseMySponza\build\bin\x64\Debug\RepriseMySponza.pdb (Partial PDB)
+  Copying shader files to build directory... shaders\reprise_vs.glsl

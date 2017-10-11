@@ -1,7 +1,13 @@
 #version 330
 
-uniform mat4 cpp_MVPXform;
-uniform mat4 cpp_ModelXform;
+layout(std140) uniform cpp_PerModelUniforms
+{
+	mat4 cpp_MVPXform;
+	mat4 cpp_ModelXform;
+	vec3 cpp_Diffuse;
+	float cpp_Shininess;
+	vec3 cpp_Specular;
+};
 
 in vec3 cpp_VertexPosition;
 in vec3 cpp_VertexNormal;

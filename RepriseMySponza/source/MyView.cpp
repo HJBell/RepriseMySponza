@@ -41,9 +41,12 @@ void MyView::windowViewWillStart(tygra::Window * window)
 	// Load the mesh data.
 	loadMeshData();
 
+	// Creating the uniform buffer blocks.
+	createUniformBufferObjects();
+
 	// Loading textures.
-	LoadTexture("resource:///hex.png");
-	LoadTexture("resource:///marble.png");
+	loadTexture("resource:///hex.png");
+	loadTexture("resource:///marble.png");
 
 	// Enabling the OpenGL depth test.
 	glEnable(GL_DEPTH_TEST);
@@ -113,91 +116,78 @@ void MyView::windowViewRender(tygra::Window * window)
 		aspectRatio, camera.getNearPlaneDistance(),
 		camera.getFarPlaneDistance());
 
+	// Creating the uniform buffer object structs.
+	PerFrameUniforms perFrameUniforms;
+	PerModelUniforms perModelUniforms;
+
 	// Creating the view matrix.
-	auto camPos = Utils::SponzaToGLMVec3(camera.getPosition());
+	perFrameUniforms.cameraPos = Utils::SponzaToGLMVec3(camera.getPosition());
 	auto camDir = Utils::SponzaToGLMVec3(camera.getDirection());
 	auto upDir = Utils::SponzaToGLMVec3(scene_->getUpDirection());
-	glm::mat4 view = glm::lookAt(camPos, camPos + camDir, upDir);
+	glm::mat4 view = glm::lookAt(perFrameUniforms.cameraPos, perFrameUniforms.cameraPos + camDir, upDir);
 
-	// Populating some uniform variabes.
-	glUniform3fv(glGetUniformLocation(shaderProgram, "cpp_AmbientIntensity"), 1, glm::value_ptr(Utils::SponzaToGLMVec3(scene_->getAmbientLightIntensity())));
-	glUniform3fv(glGetUniformLocation(shaderProgram, "cpp_CameraPos"), 1, glm::value_ptr(camPos));
+	// Setting the ambient intensity in the uniform buffer.
+	perFrameUniforms.ambientIntensity = Utils::SponzaToGLMVec3(scene_->getAmbientLightIntensity());
 
-	// Populating the directional light uniform variables.
+	// Setting the directional lights in the uniform buffer.
 	const auto directionalLights = scene_->getAllDirectionalLights();
-	const auto maxDirectionalLightsAllowed = 22;
-	const auto directionalLightCount = (directionalLights.size() <= maxDirectionalLightsAllowed) ? directionalLights.size() : maxDirectionalLightsAllowed;
-	glUniform1i(glGetUniformLocation(shaderProgram, "cpp_DirectionalLightCount"), directionalLightCount);
+	const auto directionalLightCount = (directionalLights.size() <= maxLightsPerType) ? directionalLights.size() : maxLightsPerType;
+	perFrameUniforms.directionalLightCount = directionalLightCount;
 	for (unsigned i = 0; i < directionalLightCount; i++)
 	{
-		auto directionName = "cpp_DirectionalLights[" + std::to_string(i) + "].direction";
-		glUniform3fv(glGetUniformLocation(shaderProgram, directionName.c_str()), 1, glm::value_ptr(Utils::SponzaToGLMVec3(directionalLights[i].getDirection())));
-
-		auto intensityName = "cpp_DirectionalLights[" + std::to_string(i) + "].intensity";
-		glUniform3fv(glGetUniformLocation(shaderProgram, intensityName.c_str()), 1, glm::value_ptr(Utils::SponzaToGLMVec3(directionalLights[i].getIntensity())));
+		perFrameUniforms.directionalLights[i].direction = Utils::SponzaToGLMVec3(directionalLights[i].getDirection());	
+		perFrameUniforms.directionalLights[i].intensity = Utils::SponzaToGLMVec3(directionalLights[i].getIntensity());
 	}
 
-	// Populating the point light uniform variables.
+	// Setting the point lights in the uniform buffer.
 	const auto pointLights = scene_->getAllPointLights();
-	const auto maxPointLightsAllowed = 22;
-	const auto pointLightCount = (pointLights.size() <= maxPointLightsAllowed) ? pointLights.size() : maxPointLightsAllowed;
-	glUniform1i(glGetUniformLocation(shaderProgram, "cpp_PointLightCount"), pointLightCount);
+	const auto pointLightCount = (pointLights.size() <= maxLightsPerType) ? pointLights.size() : maxLightsPerType;
+	perFrameUniforms.pointLightCount = pointLightCount;
 	for (unsigned i = 0; i < pointLightCount; i++)
 	{
-		auto positionName = "cpp_PointLights[" + std::to_string(i) + "].position";
-		glUniform3fv(glGetUniformLocation(shaderProgram, positionName.c_str()), 1, glm::value_ptr(Utils::SponzaToGLMVec3(pointLights[i].getPosition())));
-
-		auto intensityName = "cpp_PointLights[" + std::to_string(i) + "].intensity";
-		glUniform3fv(glGetUniformLocation(shaderProgram, intensityName.c_str()), 1, glm::value_ptr(Utils::SponzaToGLMVec3(pointLights[i].getIntensity())));
-
-		auto rangeName = "cpp_PointLights[" + std::to_string(i) + "].range";
-		glUniform1f(glGetUniformLocation(shaderProgram, rangeName.c_str()), pointLights[i].getRange());
+		perFrameUniforms.pointLights[i].position = Utils::SponzaToGLMVec3(pointLights[i].getPosition());
+		perFrameUniforms.pointLights[i].range = pointLights[i].getRange();
+		perFrameUniforms.pointLights[i].intensity = Utils::SponzaToGLMVec3(pointLights[i].getIntensity());
 	}
 
-	// Populating the spot light uniform variables.
+	// Setting the spot lights in the uniform buffer.
 	const auto spotLights = scene_->getAllSpotLights();
-	const auto maxSpotLightsAllowed = 22;
-	const auto spotLightCount = (spotLights.size() <= maxSpotLightsAllowed) ? spotLights.size() : maxSpotLightsAllowed;
-	glUniform1i(glGetUniformLocation(shaderProgram, "cpp_SpotLightCount"), spotLightCount);
+	const auto spotLightCount = (spotLights.size() <= maxLightsPerType) ? spotLights.size() : maxLightsPerType;
+	perFrameUniforms.spotLightCount = spotLightCount;
 	for (unsigned i = 0; i < spotLightCount; i++)
 	{
-		auto positionName = "cpp_SpotLights[" + std::to_string(i) + "].position";
-		glUniform3fv(glGetUniformLocation(shaderProgram, positionName.c_str()), 1, glm::value_ptr(Utils::SponzaToGLMVec3(spotLights[i].getPosition())));
-
-		auto intensityName = "cpp_SpotLights[" + std::to_string(i) + "].intensity";
-		glUniform3fv(glGetUniformLocation(shaderProgram, intensityName.c_str()), 1, glm::value_ptr(Utils::SponzaToGLMVec3(spotLights[i].getIntensity())));
-
-		auto rangeName = "cpp_SpotLights[" + std::to_string(i) + "].range";
-		glUniform1f(glGetUniformLocation(shaderProgram, rangeName.c_str()), spotLights[i].getRange());
-
-		auto angleName = "cpp_SpotLights[" + std::to_string(i) + "].angle";
-		glUniform1f(glGetUniformLocation(shaderProgram, angleName.c_str()), spotLights[i].getConeAngleDegrees());
-
-		auto directionName = "cpp_SpotLights[" + std::to_string(i) + "].direction";
-		glUniform3fv(glGetUniformLocation(shaderProgram, directionName.c_str()), 1, glm::value_ptr(Utils::SponzaToGLMVec3(spotLights[i].getDirection())));
+		perFrameUniforms.spotLights[i].position = Utils::SponzaToGLMVec3(spotLights[i].getPosition());
+		perFrameUniforms.spotLights[i].range = spotLights[i].getRange();
+		perFrameUniforms.spotLights[i].intensity = Utils::SponzaToGLMVec3(spotLights[i].getIntensity());
+		perFrameUniforms.spotLights[i].angle = spotLights[i].getConeAngleDegrees();
+		perFrameUniforms.spotLights[i].direction = Utils::SponzaToGLMVec3(spotLights[i].getDirection());
 	}
 
+	// Memcopying the data for the per frame uniforms.
+	glBindBuffer(GL_UNIFORM_BUFFER, perFrameUniformsUBO);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perFrameUniforms), &perFrameUniforms);	
+
 	// Looping through all instances in the scene and drawing them.
-	for (auto& instance : scene_->getAllInstances())
+	for (int i = 0; i < scene_->getAllInstances().size() - 3; i++)
 	{
-		// Getting the model matrix for the instance.
-		auto model = Utils::SponzaMat3ToGLMMat4(instance.getTransformationMatrix());
+		auto instance = scene_->getAllInstances()[i];
 
-		// Calculating the MVP matrix.
-		glm::mat4 mvpXform = projection * view * model;
+		// Setting the xforms in the uniform buffer.
+		perModelUniforms.modelXform = Utils::SponzaMat3ToGLMMat4(instance.getTransformationMatrix());
+		perModelUniforms.mvpXform = projection * view * perModelUniforms.modelXform;
 
-		// Populating the matrix uniform variables.
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "cpp_MVPXform"), 1, GL_FALSE, glm::value_ptr(mvpXform));
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "cpp_ModelXform"), 1, GL_FALSE, glm::value_ptr(model));
-
-		// Populating the material uniform variabes.
+		// Setting the material properties in the uniform buffer.
 		auto material = scene_->getMaterialById(instance.getMaterialId());
-		glUniform3fv(glGetUniformLocation(shaderProgram, "cpp_Diffuse"), 1, glm::value_ptr(Utils::SponzaToGLMVec3(material.getDiffuseColour())));
-		glUniform3fv(glGetUniformLocation(shaderProgram, "cpp_Specular"), 1, glm::value_ptr(Utils::SponzaToGLMVec3(material.getSpecularColour())));
-		glUniform1f(glGetUniformLocation(shaderProgram, "cpp_Specular"), material.getShininess());
+		perModelUniforms.diffuse = Utils::SponzaToGLMVec3(material.getDiffuseColour());
+		perModelUniforms.shininess = material.getShininess();
+		perModelUniforms.specular = Utils::SponzaToGLMVec3(material.getSpecularColour());
 		
 		// Populating the texture uniform variabes.
-		bool diffuseTextureSet = SetShaderTexture("resource:///marble.png", shaderProgram, "cpp_Texture", GL_TEXTURE0, 0);
+		setShaderTexture("resource:///marble.png", shaderProgram, "cpp_Texture", GL_TEXTURE0, 0);
+
+		// Memcopying the data for the per frame uniforms.
+		glBindBuffer(GL_UNIFORM_BUFFER, perModelUniformsUBO);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perModelUniforms), &perModelUniforms);
 
 		// Getting the mesh of the current instance.
 		const MeshGL& mesh = meshes[instance.getMeshId()];
@@ -341,7 +331,7 @@ void MyView::loadMeshData()
 }
 
 
-void MyView::LoadTexture(std::string name)
+void MyView::loadTexture(std::string name)
 {
 	//Checking the texture is not already loaded.
 	if (textures.find(name) != textures.end()) return;
@@ -380,7 +370,7 @@ void MyView::LoadTexture(std::string name)
 	else std::cout << "Warning : Texture '" << name << "' does not contain any data." << std::endl;
 }
 
-bool MyView::SetShaderTexture(std::string name, GLuint shaderProgram, std::string targetName, GLenum activeTexture, int index)
+bool MyView::setShaderTexture(std::string name, GLuint shaderProgram, std::string targetName, GLenum activeTexture, int index)
 {
 	//Checking if the texture is loaded.
 	if (textures.find(name) != textures.end())
@@ -400,4 +390,21 @@ void MyView::RecompileShaders()
 	glDeleteProgram(shaderProgram);
 	shaderProgram = loadShaderProgram(vertexShaderPath, fragmentShaderPath);
 	glUseProgram(shaderProgram);
+}
+
+void MyView::createUniformBufferObjects()
+{
+	// Creating per frame uniform buffer object.
+	glGenBuffers(1, &perFrameUniformsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, perFrameUniformsUBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(PerFrameUniforms), nullptr, GL_STREAM_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, perFrameUniformsUBO);
+	glUniformBlockBinding(shaderProgram, glGetUniformBlockIndex(shaderProgram, "cpp_PerFrameUniforms"), 0);
+
+	// Creating per model uniform buffer object.
+	glGenBuffers(1, &perModelUniformsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, perModelUniformsUBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(PerModelUniforms), nullptr, GL_STREAM_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 1, perModelUniformsUBO);
+	glUniformBlockBinding(shaderProgram, glGetUniformBlockIndex(shaderProgram, "cpp_PerModelUniforms"), 1);
 }
