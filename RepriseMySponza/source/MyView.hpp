@@ -58,9 +58,26 @@ struct PerModelUniforms
 	glm::vec3 diffuse;
 	float shininess;
 	glm::vec3 specular;
+	int isShiny;
 };
 
-struct MeshGL
+struct FriendsMeshGL
+{
+	GLuint positionVBO;
+	GLuint normalVBO;
+	GLuint elementVBO;
+	GLuint vao;
+	int elementCount;
+
+	FriendsMeshGL() :
+		positionVBO(0),
+		normalVBO(0),
+		elementVBO(0),
+		vao(0),
+		elementCount(0) {}
+};
+
+struct SponzaMeshGL
 {
 	GLuint positionVBO;
 	GLuint normalVBO;
@@ -69,8 +86,10 @@ struct MeshGL
 	GLuint vao;
 	int elementCount;
 
-	MeshGL() :
+	SponzaMeshGL() :
 		positionVBO(0),
+		normalVBO(0),
+		textureCoordVBO(0),
 		elementVBO(0),
 		vao(0),
 		elementCount(0) {}
@@ -82,12 +101,12 @@ public: // Functions.
     MyView();
     ~MyView();
     void setScene(const sponza::Context * sponza);
-	void RecompileShaders();
 
 private: // Members.
 	const sponza::Context * scene_;
 	GLuint shaderProgram;
-	std::map<sponza::MeshId, MeshGL> meshes;
+	std::map<sponza::MeshId, SponzaMeshGL> sponzaMeshes;
+	std::map<sponza::MeshId, FriendsMeshGL> friendsMeshes;
 	std::map<std::string, GLuint> textures;
 
 	GLuint perFrameUniformsUBO;

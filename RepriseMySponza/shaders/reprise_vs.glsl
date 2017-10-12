@@ -7,6 +7,7 @@ layout(std140) uniform cpp_PerModelUniforms
 	vec3 cpp_Diffuse;
 	float cpp_Shininess;
 	vec3 cpp_Specular;
+	int cpp_IsShiny;
 };
 
 in vec3 cpp_VertexPosition;

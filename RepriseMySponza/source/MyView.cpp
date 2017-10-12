@@ -18,7 +18,9 @@ MyView::MyView()
 }
 
 
-MyView::~MyView() {
+MyView::~MyView() 
+{
+
 }
 
 
@@ -85,14 +87,23 @@ void MyView::windowViewDidStop(tygra::Window * window)
 		glDeleteTextures(1, &tex.second);
 	}
 
-	// Deleting the buffers for each mesh.
-	for (auto mesh : meshes)
+	// Deleting the buffers for each sponza mesh.
+	for (auto sponzaMesh : sponzaMeshes)
 	{
-		glDeleteBuffers(1, &mesh.second.positionVBO);
-		glDeleteBuffers(1, &mesh.second.normalVBO);
-		glDeleteBuffers(1, &mesh.second.textureCoordVBO);
-		glDeleteBuffers(1, &mesh.second.elementVBO);
-		glDeleteVertexArrays(1, &mesh.second.vao);
+		glDeleteBuffers(1, &sponzaMesh.second.positionVBO);
+		glDeleteBuffers(1, &sponzaMesh.second.normalVBO);
+		glDeleteBuffers(1, &sponzaMesh.second.textureCoordVBO);
+		glDeleteBuffers(1, &sponzaMesh.second.elementVBO);
+		glDeleteVertexArrays(1, &sponzaMesh.second.vao);
+	}
+
+	// Deleting the buffers for each friends mesh.
+	for (auto friendMesh : friendsMeshes)
+	{
+		glDeleteBuffers(1, &friendMesh.second.positionVBO);
+		glDeleteBuffers(1, &friendMesh.second.normalVBO);
+		glDeleteBuffers(1, &friendMesh.second.elementVBO);
+		glDeleteVertexArrays(1, &friendMesh.second.vao);
 	}
 }
 
@@ -168,10 +179,8 @@ void MyView::windowViewRender(tygra::Window * window)
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perFrameUniforms), &perFrameUniforms);	
 
 	// Looping through all instances in the scene and drawing them.
-	for (int i = 0; i < scene_->getAllInstances().size() - 3; i++)
+	for(auto instance : scene_->getAllInstances())
 	{
-		auto instance = scene_->getAllInstances()[i];
-
 		// Setting the xforms in the uniform buffer.
 		perModelUniforms.modelXform = Utils::SponzaMat3ToGLMMat4(instance.getTransformationMatrix());
 		perModelUniforms.mvpXform = projection * view * perModelUniforms.modelXform;
@@ -181,21 +190,37 @@ void MyView::windowViewRender(tygra::Window * window)
 		perModelUniforms.diffuse = Utils::SponzaToGLMVec3(material.getDiffuseColour());
 		perModelUniforms.shininess = material.getShininess();
 		perModelUniforms.specular = Utils::SponzaToGLMVec3(material.getSpecularColour());
-		
-		// Populating the texture uniform variabes.
-		setShaderTexture("resource:///marble.png", shaderProgram, "cpp_Texture", GL_TEXTURE0, 0);
+		perModelUniforms.isShiny = material.isShiny();
 
 		// Memcopying the data for the per frame uniforms.
 		glBindBuffer(GL_UNIFORM_BUFFER, perModelUniformsUBO);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perModelUniforms), &perModelUniforms);
 
-		// Getting the mesh of the current instance.
-		const MeshGL& mesh = meshes[instance.getMeshId()];
+		// Sponza instance drawing.
+		if (sponzaMeshes.find(instance.getMeshId()) != sponzaMeshes.end())
+		{
+			// Populating the texture uniform variabes.
+			setShaderTexture("resource:///marble.png", shaderProgram, "cpp_Texture", GL_TEXTURE0, 0);
 
-		// Drawing the instance.
-		glBindVertexArray(mesh.vao);
-		glDrawElements(GL_TRIANGLES, mesh.elementCount, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
+			// Getting the mesh of the current instance.
+			const SponzaMeshGL& sponzaMesh = sponzaMeshes[instance.getMeshId()];
+
+			// Drawing the instance.
+			glBindVertexArray(sponzaMesh.vao);
+			glDrawElements(GL_TRIANGLES, sponzaMesh.elementCount, GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
+		}
+		// Friends instance drawing.
+		else
+		{
+			// Getting the mesh of the current instance.
+			const FriendsMeshGL& friendMesh = friendsMeshes[instance.getMeshId()];
+
+			// Drawing the instance.
+			glBindVertexArray(friendMesh.vao);
+			glDrawElements(GL_TRIANGLES, friendMesh.elementCount, GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
+		}		
 	}
 }
 
@@ -271,62 +296,107 @@ void MyView::loadMeshData()
 	std::vector<sponza::Mesh> meshData = geometryBuilder.getAllMeshes();
 
 	// Loop through the meshes.
-	//for (const auto& mesh : meshData)
-	for(int i = 0; i < meshData.size() - 3; i++)
+	for (const auto& mesh : meshData)
 	{
-		auto mesh = meshData[i];
+		// Friends meshes.
+		if (mesh.getTextureCoordinateArray().size() <= 0)
+		{
+			// Break the mesh down into its components.
+			const auto& positions = mesh.getPositionArray();
+			const auto& normals = mesh.getNormalArray();
+			const auto& elements = mesh.getElementArray();
 
-		// Break the mesh down into its components.
-		const auto& positions = mesh.getPositionArray();
-		const auto& normals = mesh.getNormalArray();
-		const auto& elements = mesh.getElementArray();
-		const auto& textureCoords = mesh.getTextureCoordinateArray();
+			// Create the position vertex buffer object.
+			glGenBuffers(1, &friendsMeshes[mesh.getId()].positionVBO);
+			glBindBuffer(GL_ARRAY_BUFFER, friendsMeshes[mesh.getId()].positionVBO);
+			glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(glm::vec3), positions.data(), GL_STATIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-		// Create the position vertex buffer object.
-		glGenBuffers(1, &meshes[mesh.getId()].positionVBO);
-		glBindBuffer(GL_ARRAY_BUFFER, meshes[mesh.getId()].positionVBO);
-		glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(glm::vec3), positions.data(), GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+			// Create the normal vertex buffer object.
+			glGenBuffers(1, &friendsMeshes[mesh.getId()].normalVBO);
+			glBindBuffer(GL_ARRAY_BUFFER, friendsMeshes[mesh.getId()].normalVBO);
+			glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-		// Create the normal vertex buffer object.
-		glGenBuffers(1, &meshes[mesh.getId()].normalVBO);
-		glBindBuffer(GL_ARRAY_BUFFER, meshes[mesh.getId()].normalVBO);
-		glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+			// Create the element vertex buffer object.
+			glGenBuffers(1, &friendsMeshes[mesh.getId()].elementVBO);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, friendsMeshes[mesh.getId()].elementVBO);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements.size() * sizeof(unsigned int), elements.data(), GL_STATIC_DRAW);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+			friendsMeshes[mesh.getId()].elementCount = elements.size();
 
-		// Create the element vertex buffer object.
-		glGenBuffers(1, &meshes[mesh.getId()].elementVBO);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshes[mesh.getId()].elementVBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements.size() * sizeof(unsigned int), elements.data(), GL_STATIC_DRAW);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-		meshes[mesh.getId()].elementCount = elements.size();
+			// Create the vertex array object.
+			glGenVertexArrays(1, &friendsMeshes[mesh.getId()].vao);
+			glBindVertexArray(friendsMeshes[mesh.getId()].vao);
 
-		// Create the texture coord vertex buffer object.
-		glGenBuffers(1, &meshes[mesh.getId()].textureCoordVBO);
-		glBindBuffer(GL_ARRAY_BUFFER, meshes[mesh.getId()].textureCoordVBO);
-		glBufferData(GL_ARRAY_BUFFER, textureCoords.size() * sizeof(glm::vec2), textureCoords.data(), GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, friendsMeshes[mesh.getId()].elementVBO);
 
-		// Create the vertex array object.
-		glGenVertexArrays(1, &meshes[mesh.getId()].vao);
-		glBindVertexArray(meshes[mesh.getId()].vao);
+			glBindBuffer(GL_ARRAY_BUFFER, friendsMeshes[mesh.getId()].positionVBO);
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), TGL_BUFFER_OFFSET(0));
 
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshes[mesh.getId()].elementVBO);
+			glBindBuffer(GL_ARRAY_BUFFER, friendsMeshes[mesh.getId()].normalVBO);
+			glEnableVertexAttribArray(1);
+			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), TGL_BUFFER_OFFSET(0));
 
-		glBindBuffer(GL_ARRAY_BUFFER, meshes[mesh.getId()].positionVBO);
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), TGL_BUFFER_OFFSET(0));
+			glBindVertexArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+		}
+		// Sponza meshes.
+		else
+		{
+			// Break the mesh down into its components.
+			const auto& positions = mesh.getPositionArray();
+			const auto& normals = mesh.getNormalArray();
+			const auto& elements = mesh.getElementArray();
+			const auto& textureCoords = mesh.getTextureCoordinateArray();
 
-		glBindBuffer(GL_ARRAY_BUFFER, meshes[mesh.getId()].normalVBO);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), TGL_BUFFER_OFFSET(0));
+			// Create the position vertex buffer object.
+			glGenBuffers(1, &sponzaMeshes[mesh.getId()].positionVBO);
+			glBindBuffer(GL_ARRAY_BUFFER, sponzaMeshes[mesh.getId()].positionVBO);
+			glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(glm::vec3), positions.data(), GL_STATIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-		glBindBuffer(GL_ARRAY_BUFFER, meshes[mesh.getId()].textureCoordVBO);
-		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), TGL_BUFFER_OFFSET(0));
+			// Create the normal vertex buffer object.
+			glGenBuffers(1, &sponzaMeshes[mesh.getId()].normalVBO);
+			glBindBuffer(GL_ARRAY_BUFFER, sponzaMeshes[mesh.getId()].normalVBO);
+			glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);		
+			// Create the element vertex buffer object.
+			glGenBuffers(1, &sponzaMeshes[mesh.getId()].elementVBO);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sponzaMeshes[mesh.getId()].elementVBO);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements.size() * sizeof(unsigned int), elements.data(), GL_STATIC_DRAW);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+			sponzaMeshes[mesh.getId()].elementCount = elements.size();
+
+			// Create the texture coord vertex buffer object.
+			glGenBuffers(1, &sponzaMeshes[mesh.getId()].textureCoordVBO);
+			glBindBuffer(GL_ARRAY_BUFFER, sponzaMeshes[mesh.getId()].textureCoordVBO);
+			glBufferData(GL_ARRAY_BUFFER, textureCoords.size() * sizeof(glm::vec2), textureCoords.data(), GL_STATIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+			// Create the vertex array object.
+			glGenVertexArrays(1, &sponzaMeshes[mesh.getId()].vao);
+			glBindVertexArray(sponzaMeshes[mesh.getId()].vao);
+
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sponzaMeshes[mesh.getId()].elementVBO);
+
+			glBindBuffer(GL_ARRAY_BUFFER, sponzaMeshes[mesh.getId()].positionVBO);
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), TGL_BUFFER_OFFSET(0));
+
+			glBindBuffer(GL_ARRAY_BUFFER, sponzaMeshes[mesh.getId()].normalVBO);
+			glEnableVertexAttribArray(1);
+			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), TGL_BUFFER_OFFSET(0));
+
+			glBindBuffer(GL_ARRAY_BUFFER, sponzaMeshes[mesh.getId()].textureCoordVBO);
+			glEnableVertexAttribArray(2);
+			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), TGL_BUFFER_OFFSET(0));
+
+			glBindVertexArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+		}	
 	}
 }
 
@@ -382,14 +452,6 @@ bool MyView::setShaderTexture(std::string name, GLuint shaderProgram, std::strin
 		return true;
 	}
 	return false;
-}
-
-void MyView::RecompileShaders()
-{
-	std::cout << "Recompiling Shaders..." << std::endl;
-	glDeleteProgram(shaderProgram);
-	shaderProgram = loadShaderProgram(vertexShaderPath, fragmentShaderPath);
-	glUseProgram(shaderProgram);
 }
 
 void MyView::createUniformBufferObjects()

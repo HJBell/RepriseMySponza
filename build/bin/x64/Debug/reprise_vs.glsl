@@ -7,10 +7,8 @@ layout(std140) uniform cpp_PerModelUniforms
 	vec3 cpp_Diffuse;
 	float cpp_Shininess;
 	vec3 cpp_Specular;
+	int cpp_IsShiny;
 };
-
-//uniform mat4 cpp_MVPXform;
-//uniform mat4 cpp_ModelXform;
 
 in vec3 cpp_VertexPosition;
 in vec3 cpp_VertexNormal;

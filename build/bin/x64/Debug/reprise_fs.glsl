@@ -41,22 +41,8 @@ layout(std140) uniform cpp_PerModelUniforms
 	vec3 cpp_Diffuse;
 	float cpp_Shininess;
 	vec3 cpp_Specular;
+	int cpp_IsShiny;
 };
-
-//uniform int cpp_PointLightCount;
-//uniform PointLight cpp_PointLights[22];
-
-//uniform int cpp_DirectionalLightCount;
-//uniform DirectionalLight cpp_DirectionalLights[22];
-
-//uniform int cpp_SpotLightCount;
-//uniform SpotLight cpp_SpotLights[22];
-
-//uniform vec3 cpp_AmbientIntensity;
-//uniform vec3 cpp_CameraPos;
-//uniform vec3 cpp_Diffuse;
-//uniform vec3 cpp_Specular;
-//uniform float cpp_Shininess;
 
 uniform sampler2D cpp_Texture;
 
@@ -95,10 +81,35 @@ vec4 ApplyPointLight(PointLight light)
 	if (rangeIntensity > 0.0)
 	{
 		// Calculating the intensity of the light due to the angle it hits the fragment.
-		float angleIntensity = max(0.0, dot(normalize(fragmentToLight), vs_Normal));
+		float angleIntensity = max(0.0, dot(normalize(fragmentToLight), vs_Normal));	
+
+		// Using the diffuse as the base colour.
+		vec3 baseColour = cpp_Diffuse;
+
+		// Calculating specular.
+		if (cpp_IsShiny == 1 && cpp_Shininess > 0.0)
+		{
+			// Calculating the vector from the fragment to the camera.
+			vec3 fragmentToCamera = cpp_CameraPos - vs_Position;
+
+			// Calculating the specular intensity on the fragment.
+			float specularIntensity = 0.0;
+			if (dot(vs_Normal, fragmentToLight) > 0.0)
+			{
+				vec3 resultantVector = normalize(normalize(fragmentToLight) + normalize(fragmentToCamera));
+				if(dot(vs_Normal, resultantVector) > 0)
+					specularIntensity = pow(max(dot(vs_Normal, resultantVector), 0), cpp_Shininess);
+			}
+
+			// Calculating the final specular colour.
+			vec3 specular = cpp_Specular * specularIntensity;
+
+			// Adding the specular colour to the base colour.
+			baseColour += specular;
+		}
 
 		// Calculating the final colour value.
-		colour = vec4(cpp_Diffuse * angleIntensity * light.intensity * rangeIntensity, 1.0);
+		colour = vec4(baseColour * angleIntensity * light.intensity * rangeIntensity, 1.0);
 	}
 
 	// Returning the colour.

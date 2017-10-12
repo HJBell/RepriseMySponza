@@ -114,9 +114,6 @@ void MyController::windowControlKeyboardChanged(tygra::Window * window,
     case tygra::kWindowKeyF2:
         scene_->toggleCameraAnimation();
         break;
-	case tygra::kWindowKeyF5:
-		view_->RecompileShaders();
-		break;
 	case tygra::kWindowKeyEsc:
 		window->close();
 		break;
