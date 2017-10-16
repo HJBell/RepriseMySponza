@@ -9,6 +9,9 @@
 #include <memory>
 #include <map>
 
+#define MAX_LIGHT_COUNT 32
+#define MAX_INSTANCE_COUNT 64
+
 struct DirectionalLight
 {
 	glm::vec3 direction;
@@ -35,23 +38,7 @@ struct SpotLight
 	float PADDING0;
 };
 
-struct PerFrameUniforms
-{
-	glm::vec3 cameraPos;
-	float PADDING0;
-	glm::vec3 ambientIntensity;
-	float PADDING1;
-	DirectionalLight directionalLights[32];
-	int directionalLightCount;
-	float PADDING2[3];
-	PointLight pointLights[32];
-	int pointLightCount;
-	float PADDING3[3];
-	SpotLight spotLights[32];
-	int spotLightCount;
-};
-
-struct PerModelUniforms
+struct InstanceData
 {
 	glm::mat4 mvpXform;
 	glm::mat4 modelXform;
@@ -60,6 +47,37 @@ struct PerModelUniforms
 	glm::vec3 specular;
 	int isShiny;
 };
+
+struct PerFrameUniforms
+{
+	glm::vec3 cameraPos;
+	float PADDING0;
+	glm::vec3 ambientIntensity;
+	float PADDING1;
+	DirectionalLight directionalLights[MAX_LIGHT_COUNT];
+	int directionalLightCount;
+	float PADDING2[3];
+	PointLight pointLights[MAX_LIGHT_COUNT];
+	int pointLightCount;
+	float PADDING3[3];
+	SpotLight spotLights[MAX_LIGHT_COUNT];
+	int spotLightCount;
+};
+
+struct PerModelUniforms
+{
+	InstanceData instances[MAX_INSTANCE_COUNT];
+};
+
+//struct PerModelUniforms
+//{
+//	glm::mat4 mvpXform;
+//	glm::mat4 modelXform;
+//	glm::vec3 diffuse;
+//	float shininess;
+//	glm::vec3 specular;
+//	int isShiny;
+//};
 
 struct FriendsMeshGL
 {
@@ -114,7 +132,6 @@ private: // Members.
 
 	std::string	vertexShaderPath = "resource:///reprise_vs.glsl";
 	std::string	fragmentShaderPath = "resource:///reprise_fs.glsl";
-	int maxLightsPerType = 32;
 
 private: // Functions.
     void windowViewWillStart(tygra::Window * window) override;

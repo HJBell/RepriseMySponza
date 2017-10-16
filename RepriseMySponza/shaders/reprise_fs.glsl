@@ -1,5 +1,8 @@
 #version 330
 
+#define MAX_LIGHT_COUNT 32
+#define MAX_INSTANCE_COUNT 64
+
 struct DirectionalLight
 {
 	vec3 direction;
@@ -22,26 +25,31 @@ struct SpotLight
 	vec3 direction;
 };
 
+struct InstanceData
+{
+	mat4 mvpXform;
+	mat4 modelXform;
+	vec3 diffuse;
+	float shininess;
+	vec3 specular;
+	int isShiny;
+};
+
 layout (std140) uniform cpp_PerFrameUniforms
 {
 	vec3 cpp_CameraPos;
 	vec3 cpp_AmbientIntensity;
-	DirectionalLight cpp_DirectionalLights[32];
+	DirectionalLight cpp_DirectionalLights[MAX_LIGHT_COUNT];
 	int cpp_DirectionalLightCount;
-	PointLight cpp_PointLights[32];
+	PointLight cpp_PointLights[MAX_LIGHT_COUNT];
 	int cpp_PointLightCount;
-	SpotLight cpp_SpotLights[32];
+	SpotLight cpp_SpotLights[MAX_LIGHT_COUNT];
 	int cpp_SpotLightCount;
 };
 
 layout(std140) uniform cpp_PerModelUniforms
 {
-	mat4 cpp_MVPXform;
-	mat4 cpp_ModelXform;
-	vec3 cpp_Diffuse;
-	float cpp_Shininess;
-	vec3 cpp_Specular;
-	int cpp_IsShiny;
+	InstanceData cpp_Instances[MAX_INSTANCE_COUNT];
 };
 
 uniform sampler2D cpp_Texture;
@@ -49,6 +57,7 @@ uniform sampler2D cpp_Texture;
 in vec3 vs_Position;
 in vec3 vs_Normal;
 in vec2 vs_TextureCoord;
+flat in int vs_InstanceID;
 
 out vec4 fs_Colour;
 
@@ -60,7 +69,7 @@ vec4 ApplyDirectionalLight(DirectionalLight light)
 	float angleIntensity = max(0.0, dot(light.direction, vs_Normal));
 
 	// Calculating and returning the final colour.
-	return vec4(cpp_Diffuse * angleIntensity * light.intensity, 1.0);
+	return vec4(cpp_Instances[vs_InstanceID].diffuse * angleIntensity * light.intensity, 1.0);
 }
 
 vec4 ApplyPointLight(PointLight light)
@@ -84,10 +93,10 @@ vec4 ApplyPointLight(PointLight light)
 		float angleIntensity = max(0.0, dot(normalize(fragmentToLight), vs_Normal));	
 
 		// Using the diffuse as the base colour.
-		vec3 baseColour = cpp_Diffuse;
+		vec3 baseColour = cpp_Instances[vs_InstanceID].diffuse;
 
 		// Calculating specular.
-		if (cpp_IsShiny == 1 && cpp_Shininess > 0.0)
+		if (cpp_Instances[vs_InstanceID].isShiny == 1 && cpp_Instances[vs_InstanceID].shininess > 0.0)
 		{
 			// Calculating the vector from the fragment to the camera.
 			vec3 fragmentToCamera = cpp_CameraPos - vs_Position;
@@ -98,11 +107,11 @@ vec4 ApplyPointLight(PointLight light)
 			{
 				vec3 resultantVector = normalize(normalize(fragmentToLight) + normalize(fragmentToCamera));
 				if(dot(vs_Normal, resultantVector) > 0)
-					specularIntensity = pow(max(dot(vs_Normal, resultantVector), 0), cpp_Shininess);
+					specularIntensity = pow(max(dot(vs_Normal, resultantVector), 0), cpp_Instances[vs_InstanceID].shininess);
 			}
 
 			// Calculating the final specular colour.
-			vec3 specular = cpp_Specular * specularIntensity;
+			vec3 specular = cpp_Instances[vs_InstanceID].specular * specularIntensity;
 
 			// Adding the specular colour to the base colour.
 			baseColour += specular;
@@ -146,7 +155,7 @@ vec4 ApplySpotLight(SpotLight light)
 			float angleIntensity = max(0.0, dot(normalize(-lightToFragment), vs_Normal));
 
 			// Calculating the final colour value.
-			colour = vec4(cpp_Diffuse * angleIntensity * light.intensity * rangeIntensity, 1.0);
+			colour = vec4(cpp_Instances[vs_InstanceID].diffuse * angleIntensity * light.intensity * rangeIntensity, 1.0);
 		}
 	}
 	// Returning the colour.

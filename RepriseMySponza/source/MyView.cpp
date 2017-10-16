@@ -142,7 +142,7 @@ void MyView::windowViewRender(tygra::Window * window)
 
 	// Setting the directional lights in the uniform buffer.
 	const auto directionalLights = scene_->getAllDirectionalLights();
-	const auto directionalLightCount = (directionalLights.size() <= maxLightsPerType) ? directionalLights.size() : maxLightsPerType;
+	const auto directionalLightCount = (directionalLights.size() <= MAX_LIGHT_COUNT) ? directionalLights.size() : MAX_LIGHT_COUNT;
 	perFrameUniforms.directionalLightCount = directionalLightCount;
 	for (unsigned i = 0; i < directionalLightCount; i++)
 	{
@@ -152,7 +152,7 @@ void MyView::windowViewRender(tygra::Window * window)
 
 	// Setting the point lights in the uniform buffer.
 	const auto pointLights = scene_->getAllPointLights();
-	const auto pointLightCount = (pointLights.size() <= maxLightsPerType) ? pointLights.size() : maxLightsPerType;
+	const auto pointLightCount = (pointLights.size() <= MAX_LIGHT_COUNT) ? pointLights.size() : MAX_LIGHT_COUNT;
 	perFrameUniforms.pointLightCount = pointLightCount;
 	for (unsigned i = 0; i < pointLightCount; i++)
 	{
@@ -163,7 +163,7 @@ void MyView::windowViewRender(tygra::Window * window)
 
 	// Setting the spot lights in the uniform buffer.
 	const auto spotLights = scene_->getAllSpotLights();
-	const auto spotLightCount = (spotLights.size() <= maxLightsPerType) ? spotLights.size() : maxLightsPerType;
+	const auto spotLightCount = (spotLights.size() <= MAX_LIGHT_COUNT) ? spotLights.size() : MAX_LIGHT_COUNT;
 	perFrameUniforms.spotLightCount = spotLightCount;
 	for (unsigned i = 0; i < spotLightCount; i++)
 	{
@@ -178,49 +178,73 @@ void MyView::windowViewRender(tygra::Window * window)
 	glBindBuffer(GL_UNIFORM_BUFFER, perFrameUniformsUBO);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perFrameUniforms), &perFrameUniforms);	
 
-	// Looping through all instances in the scene and drawing them.
-	for(auto instance : scene_->getAllInstances())
+
+	// Drawing the sponza meshes.
+	for (auto mesh : sponzaMeshes)
 	{
-		// Setting the xforms in the uniform buffer.
-		perModelUniforms.modelXform = Utils::SponzaMat3ToGLMMat4(instance.getTransformationMatrix());
-		perModelUniforms.mvpXform = projection * view * perModelUniforms.modelXform;
+		int meshID = mesh.first;
+		auto instanceIDs = scene_->getInstancesByMeshId(meshID);
+		int instanceCount = instanceIDs.size();
 
-		// Setting the material properties in the uniform buffer.
-		auto material = scene_->getMaterialById(instance.getMaterialId());
-		perModelUniforms.diffuse = Utils::SponzaToGLMVec3(material.getDiffuseColour());
-		perModelUniforms.shininess = material.getShininess();
-		perModelUniforms.specular = Utils::SponzaToGLMVec3(material.getSpecularColour());
-		perModelUniforms.isShiny = material.isShiny();
+		// Loop through the instances and populate the uniform buffer block.
+		for (int i = 0; i < instanceCount; i++)
+		{			
+			auto instance = scene_->getInstanceById(instanceIDs[i]);
 
-		// Memcopying the data for the per frame uniforms.
+			// Setting the xforms in the uniform buffer.
+			perModelUniforms.instances[i].modelXform = Utils::SponzaMat3ToGLMMat4(instance.getTransformationMatrix());
+			perModelUniforms.instances[i].mvpXform = projection * view * perModelUniforms.instances[i].modelXform;
+
+			// Setting the material properties in the uniform buffer.
+			auto material = scene_->getMaterialById(instance.getMaterialId());
+			perModelUniforms.instances[i].diffuse = Utils::SponzaToGLMVec3(material.getDiffuseColour());
+			perModelUniforms.instances[i].shininess = material.getShininess();
+			perModelUniforms.instances[i].specular = Utils::SponzaToGLMVec3(material.getSpecularColour());
+			perModelUniforms.instances[i].isShiny = material.isShiny();
+		}
+
 		glBindBuffer(GL_UNIFORM_BUFFER, perModelUniformsUBO);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perModelUniforms), &perModelUniforms);
 
-		// Sponza instance drawing.
-		if (sponzaMeshes.find(instance.getMeshId()) != sponzaMeshes.end())
+		setShaderTexture("resource:///marble.png", shaderProgram, "cpp_Texture", GL_TEXTURE0, 0);
+
+		// Drawing the instance.
+		glBindVertexArray(mesh.second.vao);
+		glDrawElementsInstanced(GL_TRIANGLES, mesh.second.elementCount, GL_UNSIGNED_INT, 0, instanceCount);
+		glBindVertexArray(0);
+	}
+
+	// Drawing the friends meshes.
+	for (auto mesh : friendsMeshes)
+	{
+		int meshID = mesh.first;
+		auto instanceIDs = scene_->getInstancesByMeshId(meshID);
+		int instanceCount = instanceIDs.size();
+
+		// Loop through the instances and populate the uniform buffer block.
+		for (int i = 0; i < instanceCount; i++)
 		{
-			// Populating the texture uniform variabes.
-			setShaderTexture("resource:///marble.png", shaderProgram, "cpp_Texture", GL_TEXTURE0, 0);
+			auto instance = scene_->getInstanceById(instanceIDs[i]);
 
-			// Getting the mesh of the current instance.
-			const SponzaMeshGL& sponzaMesh = sponzaMeshes[instance.getMeshId()];
+			// Setting the xforms in the uniform buffer.
+			perModelUniforms.instances[i].modelXform = Utils::SponzaMat3ToGLMMat4(instance.getTransformationMatrix());
+			perModelUniforms.instances[i].mvpXform = projection * view * perModelUniforms.instances[i].modelXform;
 
-			// Drawing the instance.
-			glBindVertexArray(sponzaMesh.vao);
-			glDrawElements(GL_TRIANGLES, sponzaMesh.elementCount, GL_UNSIGNED_INT, 0);
-			glBindVertexArray(0);
+			// Setting the material properties in the uniform buffer.
+			auto material = scene_->getMaterialById(instance.getMaterialId());
+			perModelUniforms.instances[i].diffuse = Utils::SponzaToGLMVec3(material.getDiffuseColour());
+			perModelUniforms.instances[i].shininess = material.getShininess();
+			perModelUniforms.instances[i].specular = Utils::SponzaToGLMVec3(material.getSpecularColour());
+			perModelUniforms.instances[i].isShiny = material.isShiny();
 		}
-		// Friends instance drawing.
-		else
-		{
-			// Getting the mesh of the current instance.
-			const FriendsMeshGL& friendMesh = friendsMeshes[instance.getMeshId()];
 
-			// Drawing the instance.
-			glBindVertexArray(friendMesh.vao);
-			glDrawElements(GL_TRIANGLES, friendMesh.elementCount, GL_UNSIGNED_INT, 0);
-			glBindVertexArray(0);
-		}		
+		glBindBuffer(GL_UNIFORM_BUFFER, perModelUniformsUBO);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perModelUniforms), &perModelUniforms);
+
+		// Drawing the instance.
+		glBindVertexArray(mesh.second.vao);
+		glDrawElementsInstanced(GL_TRIANGLES, mesh.second.elementCount, GL_UNSIGNED_INT, 0, instanceCount);
+		glBindVertexArray(0);
 	}
 }
 
