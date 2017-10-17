@@ -50,9 +50,6 @@ void MyView::windowViewWillStart(tygra::Window * window)
 	loadTexture("resource:///hex.png");
 	loadTexture("resource:///marble.png");
 
-	// Enabling the OpenGL depth test.
-	glEnable(GL_DEPTH_TEST);
-
 	// Enabling polygons to be culled when they leave the window.
 	glEnable(GL_CULL_FACE);
 
@@ -111,7 +108,7 @@ void MyView::windowViewDidStop(tygra::Window * window)
 void MyView::windowViewRender(tygra::Window * window)
 {
 	// Terminating the program if 'scene_' is null.
-    assert(scene_ != nullptr);
+	assert(scene_ != nullptr);
 
 	// Clearing the contents of the buffers from the previous frame.
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -120,6 +117,21 @@ void MyView::windowViewRender(tygra::Window * window)
 	GLint viewportSize[4];
 	glGetIntegerv(GL_VIEWPORT, viewportSize);
 	const float aspectRatio = viewportSize[2] / (float)viewportSize[3];
+
+
+
+	// -----------------Depth pass-----------------
+
+	// Enabling the OpenGL depth test.
+	glEnable(GL_DEPTH_TEST);
+
+	glDepthMask(GL_TRUE);
+
+	glDepthFunc(GL_LESS);
+
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+	glDisable(GL_BLEND);
 
 	// Creating the projection matrix.
 	sponza::Camera camera = scene_->getCamera();
@@ -140,43 +152,9 @@ void MyView::windowViewRender(tygra::Window * window)
 	// Setting the ambient intensity in the uniform buffer.
 	perFrameUniforms.ambientIntensity = Utils::SponzaToGLMVec3(scene_->getAmbientLightIntensity());
 
-	// Setting the directional lights in the uniform buffer.
-	const auto directionalLights = scene_->getAllDirectionalLights();
-	const auto directionalLightCount = (directionalLights.size() <= MAX_LIGHT_COUNT) ? directionalLights.size() : MAX_LIGHT_COUNT;
-	perFrameUniforms.directionalLightCount = directionalLightCount;
-	for (unsigned i = 0; i < directionalLightCount; i++)
-	{
-		perFrameUniforms.directionalLights[i].direction = Utils::SponzaToGLMVec3(directionalLights[i].getDirection());	
-		perFrameUniforms.directionalLights[i].intensity = Utils::SponzaToGLMVec3(directionalLights[i].getIntensity());
-	}
-
-	// Setting the point lights in the uniform buffer.
-	const auto pointLights = scene_->getAllPointLights();
-	const auto pointLightCount = (pointLights.size() <= MAX_LIGHT_COUNT) ? pointLights.size() : MAX_LIGHT_COUNT;
-	perFrameUniforms.pointLightCount = pointLightCount;
-	for (unsigned i = 0; i < pointLightCount; i++)
-	{
-		perFrameUniforms.pointLights[i].position = Utils::SponzaToGLMVec3(pointLights[i].getPosition());
-		perFrameUniforms.pointLights[i].range = pointLights[i].getRange();
-		perFrameUniforms.pointLights[i].intensity = Utils::SponzaToGLMVec3(pointLights[i].getIntensity());
-	}
-
-	// Setting the spot lights in the uniform buffer.
-	const auto spotLights = scene_->getAllSpotLights();
-	const auto spotLightCount = (spotLights.size() <= MAX_LIGHT_COUNT) ? spotLights.size() : MAX_LIGHT_COUNT;
-	perFrameUniforms.spotLightCount = spotLightCount;
-	for (unsigned i = 0; i < spotLightCount; i++)
-	{
-		perFrameUniforms.spotLights[i].position = Utils::SponzaToGLMVec3(spotLights[i].getPosition());
-		perFrameUniforms.spotLights[i].range = spotLights[i].getRange();
-		perFrameUniforms.spotLights[i].intensity = Utils::SponzaToGLMVec3(spotLights[i].getIntensity());
-		perFrameUniforms.spotLights[i].angle = spotLights[i].getConeAngleDegrees();
-		perFrameUniforms.spotLights[i].direction = Utils::SponzaToGLMVec3(spotLights[i].getDirection());
-	}
-
 	// Memcopying the data for the per frame uniforms.
 	glBindBuffer(GL_UNIFORM_BUFFER, perFrameUniformsUBO);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perFrameUniforms), &perFrameUniforms);	
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perFrameUniforms), &perFrameUniforms);
 
 
 	// Drawing the sponza meshes.
@@ -188,7 +166,7 @@ void MyView::windowViewRender(tygra::Window * window)
 
 		// Loop through the instances and populate the uniform buffer block.
 		for (int i = 0; i < instanceCount; i++)
-		{			
+		{
 			auto instance = scene_->getInstanceById(instanceIDs[i]);
 
 			// Setting the xforms in the uniform buffer.
@@ -246,6 +224,57 @@ void MyView::windowViewRender(tygra::Window * window)
 		glDrawElementsInstanced(GL_TRIANGLES, mesh.second.elementCount, GL_UNSIGNED_INT, 0, instanceCount);
 		glBindVertexArray(0);
 	}
+
+
+	// Loop through lights.
+		
+		// Shading passes.
+
+
+
+
+
+	
+
+	
+
+	
+
+	//// Setting the directional lights in the uniform buffer.
+	//const auto directionalLights = scene_->getAllDirectionalLights();
+	//const auto directionalLightCount = (directionalLights.size() <= MAX_LIGHT_COUNT) ? directionalLights.size() : MAX_LIGHT_COUNT;
+	//perFrameUniforms.directionalLightCount = directionalLightCount;
+	//for (unsigned i = 0; i < directionalLightCount; i++)
+	//{
+	//	perFrameUniforms.directionalLights[i].direction = Utils::SponzaToGLMVec3(directionalLights[i].getDirection());	
+	//	perFrameUniforms.directionalLights[i].intensity = Utils::SponzaToGLMVec3(directionalLights[i].getIntensity());
+	//}
+
+	//// Setting the point lights in the uniform buffer.
+	//const auto pointLights = scene_->getAllPointLights();
+	//const auto pointLightCount = (pointLights.size() <= MAX_LIGHT_COUNT) ? pointLights.size() : MAX_LIGHT_COUNT;
+	//perFrameUniforms.pointLightCount = pointLightCount;
+	//for (unsigned i = 0; i < pointLightCount; i++)
+	//{
+	//	perFrameUniforms.pointLights[i].position = Utils::SponzaToGLMVec3(pointLights[i].getPosition());
+	//	perFrameUniforms.pointLights[i].range = pointLights[i].getRange();
+	//	perFrameUniforms.pointLights[i].intensity = Utils::SponzaToGLMVec3(pointLights[i].getIntensity());
+	//}
+
+	//// Setting the spot lights in the uniform buffer.
+	//const auto spotLights = scene_->getAllSpotLights();
+	//const auto spotLightCount = (spotLights.size() <= MAX_LIGHT_COUNT) ? spotLights.size() : MAX_LIGHT_COUNT;
+	//perFrameUniforms.spotLightCount = spotLightCount;
+	//for (unsigned i = 0; i < spotLightCount; i++)
+	//{
+	//	perFrameUniforms.spotLights[i].position = Utils::SponzaToGLMVec3(spotLights[i].getPosition());
+	//	perFrameUniforms.spotLights[i].range = spotLights[i].getRange();
+	//	perFrameUniforms.spotLights[i].intensity = Utils::SponzaToGLMVec3(spotLights[i].getIntensity());
+	//	perFrameUniforms.spotLights[i].angle = spotLights[i].getConeAngleDegrees();
+	//	perFrameUniforms.spotLights[i].direction = Utils::SponzaToGLMVec3(spotLights[i].getDirection());
+	//}
+
+	
 }
 
 

@@ -54,5 +54,11 @@
     <TygraShader Include="shaders\reprise_vs.glsl">
       <Filter>Shader Files</Filter>
     </TygraShader>
+    <TygraShader Include="shaders\ambient_fs.glsl">
+      <Filter>Shader Files</Filter>
+    </TygraShader>
+    <TygraShader Include="shaders\ambient_vs.glsl">
+      <Filter>Shader Files</Filter>
+    </TygraShader>
   </ItemGroup>
 </Project>

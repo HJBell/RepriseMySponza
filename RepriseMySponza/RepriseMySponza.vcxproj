@@ -285,6 +285,8 @@
     <ClInclude Include="source\Utils.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <TygraShader Include="shaders\ambient_fs.glsl" />
+    <TygraShader Include="shaders\ambient_vs.glsl" />
     <TygraShader Include="shaders\reprise_fs.glsl">
       <FileType>Document</FileType>
     </TygraShader>

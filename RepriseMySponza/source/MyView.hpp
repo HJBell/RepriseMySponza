@@ -48,20 +48,27 @@ struct InstanceData
 	int isShiny;
 };
 
+//struct PerFrameUniforms
+//{
+//	glm::vec3 cameraPos;
+//	float PADDING0;
+//	glm::vec3 ambientIntensity;
+//	float PADDING1;
+//	DirectionalLight directionalLights[MAX_LIGHT_COUNT];
+//	int directionalLightCount;
+//	float PADDING2[3];
+//	PointLight pointLights[MAX_LIGHT_COUNT];
+//	int pointLightCount;
+//	float PADDING3[3];
+//	SpotLight spotLights[MAX_LIGHT_COUNT];
+//	int spotLightCount;
+//};
+
 struct PerFrameUniforms
 {
 	glm::vec3 cameraPos;
 	float PADDING0;
 	glm::vec3 ambientIntensity;
-	float PADDING1;
-	DirectionalLight directionalLights[MAX_LIGHT_COUNT];
-	int directionalLightCount;
-	float PADDING2[3];
-	PointLight pointLights[MAX_LIGHT_COUNT];
-	int pointLightCount;
-	float PADDING3[3];
-	SpotLight spotLights[MAX_LIGHT_COUNT];
-	int spotLightCount;
 };
 
 struct PerModelUniforms
@@ -130,8 +137,8 @@ private: // Members.
 	GLuint perFrameUniformsUBO;
 	GLuint perModelUniformsUBO;
 
-	std::string	vertexShaderPath = "resource:///reprise_vs.glsl";
-	std::string	fragmentShaderPath = "resource:///reprise_fs.glsl";
+	std::string	vertexShaderPath = "resource:///ambient_vs.glsl";
+	std::string	fragmentShaderPath = "resource:///ambient_fs.glsl";
 
 private: // Functions.
     void windowViewWillStart(tygra::Window * window) override;
