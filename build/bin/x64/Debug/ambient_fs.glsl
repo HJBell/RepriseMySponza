@@ -2,6 +2,9 @@
 
 #define MAX_INSTANCE_COUNT 64
 
+
+//----------------------Structures----------------------
+
 struct InstanceData
 {
 	mat4 mvpXform;
@@ -11,6 +14,9 @@ struct InstanceData
 	vec3 specular;
 	int isShiny;
 };
+
+
+//----------------------Uniforms----------------------
 
 layout (std140) uniform cpp_PerFrameUniforms
 {
@@ -25,10 +31,16 @@ layout(std140) uniform cpp_PerModelUniforms
 
 uniform sampler2D cpp_Texture;
 
+
+//----------------------In Variables----------------------
+
 in vec3 vs_Position;
 in vec3 vs_Normal;
 in vec2 vs_TextureCoord;
 flat in int vs_InstanceID;
+
+
+//----------------------Out Variables----------------------
 
 out vec4 fs_Colour;
 

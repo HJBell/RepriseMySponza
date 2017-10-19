@@ -12,6 +12,43 @@
 #define MAX_LIGHT_COUNT 32
 #define MAX_INSTANCE_COUNT 64
 
+
+//----------------------Structures----------------------
+
+struct FriendsMeshGL
+{
+	GLuint positionVBO;
+	GLuint normalVBO;
+	GLuint elementVBO;
+	GLuint vao;
+	int elementCount;
+
+	FriendsMeshGL() :
+		positionVBO(0),
+		normalVBO(0),
+		elementVBO(0),
+		vao(0),
+		elementCount(0) {}
+};
+
+struct SponzaMeshGL
+{
+	GLuint positionVBO;
+	GLuint normalVBO;
+	GLuint textureCoordVBO;
+	GLuint elementVBO;
+	GLuint vao;
+	int elementCount;
+
+	SponzaMeshGL() :
+		positionVBO(0),
+		normalVBO(0),
+		textureCoordVBO(0),
+		elementVBO(0),
+		vao(0),
+		elementCount(0) {}
+};
+
 struct DirectionalLight
 {
 	glm::vec3 direction;
@@ -48,21 +85,8 @@ struct InstanceData
 	int isShiny;
 };
 
-//struct PerFrameUniforms
-//{
-//	glm::vec3 cameraPos;
-//	float PADDING0;
-//	glm::vec3 ambientIntensity;
-//	float PADDING1;
-//	DirectionalLight directionalLights[MAX_LIGHT_COUNT];
-//	int directionalLightCount;
-//	float PADDING2[3];
-//	PointLight pointLights[MAX_LIGHT_COUNT];
-//	int pointLightCount;
-//	float PADDING3[3];
-//	SpotLight spotLights[MAX_LIGHT_COUNT];
-//	int spotLightCount;
-//};
+
+//----------------------Uniform Buffer Blocks----------------------
 
 struct PerFrameUniforms
 {
@@ -76,49 +100,23 @@ struct PerModelUniforms
 	InstanceData instances[MAX_INSTANCE_COUNT];
 };
 
-//struct PerModelUniforms
-//{
-//	glm::mat4 mvpXform;
-//	glm::mat4 modelXform;
-//	glm::vec3 diffuse;
-//	float shininess;
-//	glm::vec3 specular;
-//	int isShiny;
-//};
-
-struct FriendsMeshGL
+struct DirectionalLightUniforms
 {
-	GLuint positionVBO;
-	GLuint normalVBO;
-	GLuint elementVBO;
-	GLuint vao;
-	int elementCount;
-
-	FriendsMeshGL() :
-		positionVBO(0),
-		normalVBO(0),
-		elementVBO(0),
-		vao(0),
-		elementCount(0) {}
+	DirectionalLight light;
 };
 
-struct SponzaMeshGL
+struct PointLightUniforms
 {
-	GLuint positionVBO;
-	GLuint normalVBO;
-	GLuint textureCoordVBO;
-	GLuint elementVBO;
-	GLuint vao;
-	int elementCount;
-
-	SponzaMeshGL() :
-		positionVBO(0),
-		normalVBO(0),
-		textureCoordVBO(0),
-		elementVBO(0),
-		vao(0),
-		elementCount(0) {}
+	PointLight light;
 };
+
+struct SpotLightUniforms
+{
+	SpotLight light;
+};
+
+
+//----------------------MyView----------------------
 
 class MyView : public tygra::WindowViewDelegate
 {
@@ -129,16 +127,31 @@ public: // Functions.
 
 private: // Members.
 	const sponza::Context * scene_;
-	GLuint shaderProgram;
+
+	GLuint ambientShaderProgram;
+	GLuint directionalLightShaderProgram;
+	GLuint pointLightShaderProgram;
+	GLuint spotLightShaderProgram;
+
+
 	std::map<sponza::MeshId, SponzaMeshGL> sponzaMeshes;
 	std::map<sponza::MeshId, FriendsMeshGL> friendsMeshes;
 	std::map<std::string, GLuint> textures;
 
-	GLuint perFrameUniformsUBO;
-	GLuint perModelUniformsUBO;
+	GLuint ambPassPerFrameUniformsUBO;
+	GLuint ambPassPerModelUniformsUBO;
 
-	std::string	vertexShaderPath = "resource:///ambient_vs.glsl";
-	std::string	fragmentShaderPath = "resource:///ambient_fs.glsl";
+	GLuint dirPassDirLightUniformsUBO;
+	GLuint dirPassPerFrameUniformsUBO;
+	GLuint dirPassPerModelUniformsUBO;
+
+	GLuint pointPassPointLightUniformsUBO;
+	GLuint pointPassPerFrameUniformsUBO;
+	GLuint pointPassPerModelUniformsUBO;
+
+	GLuint spotPassSpotLightUniformsUBO;
+	GLuint spotPassPerFrameUniformsUBO;
+	GLuint spotPassPerModelUniformsUBO;
 
 private: // Functions.
     void windowViewWillStart(tygra::Window * window) override;

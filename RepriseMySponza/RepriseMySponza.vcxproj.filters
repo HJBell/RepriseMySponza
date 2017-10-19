@@ -60,5 +60,23 @@
     <TygraShader Include="shaders\ambient_vs.glsl">
       <Filter>Shader Files</Filter>
     </TygraShader>
+    <TygraShader Include="shaders\dir_fs.glsl">
+      <Filter>Shader Files</Filter>
+    </TygraShader>
+    <TygraShader Include="shaders\dir_vs.glsl">
+      <Filter>Shader Files</Filter>
+    </TygraShader>
+    <TygraShader Include="shaders\point_fs.glsl">
+      <Filter>Shader Files</Filter>
+    </TygraShader>
+    <TygraShader Include="shaders\point_vs.glsl">
+      <Filter>Shader Files</Filter>
+    </TygraShader>
+    <TygraShader Include="shaders\spot_fs.glsl">
+      <Filter>Shader Files</Filter>
+    </TygraShader>
+    <TygraShader Include="shaders\spot_vs.glsl">
+      <Filter>Shader Files</Filter>
+    </TygraShader>
   </ItemGroup>
 </Project>

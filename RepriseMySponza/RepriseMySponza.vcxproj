@@ -287,12 +287,18 @@
   <ItemGroup>
     <TygraShader Include="shaders\ambient_fs.glsl" />
     <TygraShader Include="shaders\ambient_vs.glsl" />
+    <TygraShader Include="shaders\dir_fs.glsl" />
+    <TygraShader Include="shaders\dir_vs.glsl" />
+    <TygraShader Include="shaders\point_fs.glsl" />
+    <TygraShader Include="shaders\point_vs.glsl" />
     <TygraShader Include="shaders\reprise_fs.glsl">
       <FileType>Document</FileType>
     </TygraShader>
     <TygraShader Include="shaders\reprise_vs.glsl">
       <FileType>Document</FileType>
     </TygraShader>
+    <TygraShader Include="shaders\spot_fs.glsl" />
+    <TygraShader Include="shaders\spot_vs.glsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="doc\readme.txt" />

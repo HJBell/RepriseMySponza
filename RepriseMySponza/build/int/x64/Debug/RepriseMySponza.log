@@ -1,3 +1,17 @@
-﻿  RepriseMySponza.vcxproj -> C:\Users\p4014518\Desktop\RepriseMySponza\build\bin\x64\Debug\RepriseMySponza.exe
-  RepriseMySponza.vcxproj -> C:\Users\p4014518\Desktop\RepriseMySponza\build\bin\x64\Debug\RepriseMySponza.pdb (Partial PDB)
-  Copying shader files to build directory... shaders\ambient_fs.glsl
+﻿  MyView.cpp
+  No target GL version declared, defaulting to GL 3.3
+  For example, use #define TGL_TARGET_GL_4_1 before including tgl.h to specify OpenGL 4.1
+source\MyView.cpp(2): warning C4067: unexpected tokens following preprocessor directive - expected a newline
+source\MyView.cpp(170): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+source\MyView.cpp(205): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+source\MyView.cpp(271): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+source\MyView.cpp(306): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+source\MyView.cpp(376): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+source\MyView.cpp(411): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+source\MyView.cpp(486): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+source\MyView.cpp(521): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+source\MyView.cpp(696): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+source\MyView.cpp(741): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+source\MyView.cpp(805): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
+  RepriseMySponza.vcxproj -> C:\Users\p4014518\Desktop\RepriseMySponza\build\bin\x64\Debug\RepriseMySponza.exe
+  Copying shader files to build directory... shaders\dir_fs.glsl;shaders\point_fs.glsl;shaders\spot_fs.glsl

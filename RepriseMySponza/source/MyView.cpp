@@ -38,14 +38,17 @@ void MyView::windowViewWillStart(tygra::Window * window)
     assert(scene_ != nullptr);
 
 	// Loading the shader program.
-	shaderProgram = loadShaderProgram(vertexShaderPath, fragmentShaderPath);
+	ambientShaderProgram = loadShaderProgram("resource:///ambient_vs.glsl", "resource:///ambient_fs.glsl");
+	directionalLightShaderProgram = loadShaderProgram("resource:///dir_vs.glsl", "resource:///dir_fs.glsl");
+	pointLightShaderProgram = loadShaderProgram("resource:///point_vs.glsl", "resource:///point_fs.glsl");
+	spotLightShaderProgram = loadShaderProgram("resource:///spot_vs.glsl", "resource:///spot_fs.glsl");
 
 	// Load the mesh data.
 	loadMeshData();
 
 	// Creating the uniform buffer blocks.
 	createUniformBufferObjects();
-
+	
 	// Loading textures.
 	loadTexture("resource:///hex.png");
 	loadTexture("resource:///marble.png");
@@ -55,9 +58,6 @@ void MyView::windowViewWillStart(tygra::Window * window)
 
 	// Setting the polygon rasterization mode.
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-	// Enabling the shader program.
-	glUseProgram(shaderProgram);
 }
 
 
@@ -75,8 +75,11 @@ void MyView::windowViewDidReset(tygra::Window * window,
 
 void MyView::windowViewDidStop(tygra::Window * window)
 {
-	// Deleting the shader program.
-	glDeleteProgram(shaderProgram);
+	// Deleting the shader programs.
+	glDeleteProgram(ambientShaderProgram);
+	glDeleteProgram(directionalLightShaderProgram);
+	glDeleteProgram(pointLightShaderProgram);
+	glDeleteProgram(spotLightShaderProgram);
 
 	// Deleting the textures.
 	for (auto tex : textures)
@@ -111,6 +114,7 @@ void MyView::windowViewRender(tygra::Window * window)
 	assert(scene_ != nullptr);
 
 	// Clearing the contents of the buffers from the previous frame.
+	glDepthMask(GL_TRUE);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// Calculating the aspect ratio.
@@ -120,9 +124,10 @@ void MyView::windowViewRender(tygra::Window * window)
 
 
 
-	// -----------------Depth pass-----------------
+	// -----------------Ambient pass-----------------
 
-	// Enabling the OpenGL depth test.
+	glUseProgram(ambientShaderProgram);
+
 	glEnable(GL_DEPTH_TEST);
 
 	glDepthMask(GL_TRUE);
@@ -153,7 +158,7 @@ void MyView::windowViewRender(tygra::Window * window)
 	perFrameUniforms.ambientIntensity = Utils::SponzaToGLMVec3(scene_->getAmbientLightIntensity());
 
 	// Memcopying the data for the per frame uniforms.
-	glBindBuffer(GL_UNIFORM_BUFFER, perFrameUniformsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, ambPassPerFrameUniformsUBO);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perFrameUniforms), &perFrameUniforms);
 
 
@@ -181,10 +186,10 @@ void MyView::windowViewRender(tygra::Window * window)
 			perModelUniforms.instances[i].isShiny = material.isShiny();
 		}
 
-		glBindBuffer(GL_UNIFORM_BUFFER, perModelUniformsUBO);
+		glBindBuffer(GL_UNIFORM_BUFFER, ambPassPerModelUniformsUBO);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perModelUniforms), &perModelUniforms);
 
-		setShaderTexture("resource:///marble.png", shaderProgram, "cpp_Texture", GL_TEXTURE0, 0);
+		setShaderTexture("resource:///marble.png", ambientShaderProgram, "cpp_Texture", GL_TEXTURE0, 0);
 
 		// Drawing the instance.
 		glBindVertexArray(mesh.second.vao);
@@ -216,7 +221,7 @@ void MyView::windowViewRender(tygra::Window * window)
 			perModelUniforms.instances[i].isShiny = material.isShiny();
 		}
 
-		glBindBuffer(GL_UNIFORM_BUFFER, perModelUniformsUBO);
+		glBindBuffer(GL_UNIFORM_BUFFER, ambPassPerModelUniformsUBO);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perModelUniforms), &perModelUniforms);
 
 		// Drawing the instance.
@@ -226,12 +231,324 @@ void MyView::windowViewRender(tygra::Window * window)
 	}
 
 
-	// Loop through lights.
+	// -----------------Directional Light pass-----------------
 		
-		// Shading passes.
+	glUseProgram(directionalLightShaderProgram);
+
+	glEnable(GL_DEPTH_TEST);
+
+	glDepthMask(GL_FALSE);
+
+	glDepthFunc(GL_EQUAL);
+
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+	glEnable(GL_BLEND);
+
+	glBlendEquation(GL_FUNC_ADD);
+
+	glBlendFunc(GL_ONE, GL_ONE);
+
+	// Memcopying the data for the per frame uniforms.
+	glBindBuffer(GL_UNIFORM_BUFFER, dirPassPerFrameUniformsUBO);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perFrameUniforms), &perFrameUniforms);
+
+	for (auto light : scene_->getAllDirectionalLights())
+	{
+		DirectionalLightUniforms directionalLightUniform;
+		directionalLightUniform.light.direction = Utils::SponzaToGLMVec3(light.getDirection());
+		directionalLightUniform.light.intensity = Utils::SponzaToGLMVec3(light.getIntensity());
+
+		// Memcopying the data for the per frame uniforms.
+		glBindBuffer(GL_UNIFORM_BUFFER, dirPassDirLightUniformsUBO);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(directionalLightUniform), &directionalLightUniform);
+
+		// Drawing the sponza meshes.
+		for (auto mesh : sponzaMeshes)
+		{
+			int meshID = mesh.first;
+			auto instanceIDs = scene_->getInstancesByMeshId(meshID);
+			int instanceCount = instanceIDs.size();
+
+			// Loop through the instances and populate the uniform buffer block.
+			for (int i = 0; i < instanceCount; i++)
+			{
+				auto instance = scene_->getInstanceById(instanceIDs[i]);
+
+				// Setting the xforms in the uniform buffer.
+				perModelUniforms.instances[i].modelXform = Utils::SponzaMat3ToGLMMat4(instance.getTransformationMatrix());
+				perModelUniforms.instances[i].mvpXform = projection * view * perModelUniforms.instances[i].modelXform;
+
+				// Setting the material properties in the uniform buffer.
+				auto material = scene_->getMaterialById(instance.getMaterialId());
+				perModelUniforms.instances[i].diffuse = Utils::SponzaToGLMVec3(material.getDiffuseColour());
+				perModelUniforms.instances[i].shininess = material.getShininess();
+				perModelUniforms.instances[i].specular = Utils::SponzaToGLMVec3(material.getSpecularColour());
+				perModelUniforms.instances[i].isShiny = material.isShiny();
+			}
+
+			glBindBuffer(GL_UNIFORM_BUFFER, dirPassPerModelUniformsUBO);
+			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perModelUniforms), &perModelUniforms);
+
+			setShaderTexture("resource:///marble.png", directionalLightShaderProgram, "cpp_Texture", GL_TEXTURE0, 0);
+
+			// Drawing the instance.
+			glBindVertexArray(mesh.second.vao);
+			glDrawElementsInstanced(GL_TRIANGLES, mesh.second.elementCount, GL_UNSIGNED_INT, 0, instanceCount);
+			glBindVertexArray(0);
+		}
+
+		// Drawing the friends meshes.
+		for (auto mesh : friendsMeshes)
+		{
+			int meshID = mesh.first;
+			auto instanceIDs = scene_->getInstancesByMeshId(meshID);
+			int instanceCount = instanceIDs.size();
+
+			// Loop through the instances and populate the uniform buffer block.
+			for (int i = 0; i < instanceCount; i++)
+			{
+				auto instance = scene_->getInstanceById(instanceIDs[i]);
+
+				// Setting the xforms in the uniform buffer.
+				perModelUniforms.instances[i].modelXform = Utils::SponzaMat3ToGLMMat4(instance.getTransformationMatrix());
+				perModelUniforms.instances[i].mvpXform = projection * view * perModelUniforms.instances[i].modelXform;
+
+				// Setting the material properties in the uniform buffer.
+				auto material = scene_->getMaterialById(instance.getMaterialId());
+				perModelUniforms.instances[i].diffuse = Utils::SponzaToGLMVec3(material.getDiffuseColour());
+				perModelUniforms.instances[i].shininess = material.getShininess();
+				perModelUniforms.instances[i].specular = Utils::SponzaToGLMVec3(material.getSpecularColour());
+				perModelUniforms.instances[i].isShiny = material.isShiny();
+			}
+
+			glBindBuffer(GL_UNIFORM_BUFFER, dirPassPerModelUniformsUBO);
+			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perModelUniforms), &perModelUniforms);
+
+			// Drawing the instance.
+			glBindVertexArray(mesh.second.vao);
+			glDrawElementsInstanced(GL_TRIANGLES, mesh.second.elementCount, GL_UNSIGNED_INT, 0, instanceCount);
+			glBindVertexArray(0);
+		}
+	}
 
 
 
+
+	// -----------------Point Light pass-----------------
+
+	glUseProgram(pointLightShaderProgram);
+
+	glEnable(GL_DEPTH_TEST);
+
+	glDepthMask(GL_FALSE);
+
+	glDepthFunc(GL_EQUAL);
+
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+	glEnable(GL_BLEND);
+
+	glBlendEquation(GL_FUNC_ADD);
+
+	glBlendFunc(GL_ONE, GL_ONE);
+
+	// Memcopying the data for the per frame uniforms.
+	glBindBuffer(GL_UNIFORM_BUFFER, pointPassPerFrameUniformsUBO);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perFrameUniforms), &perFrameUniforms);
+
+	for (auto light : scene_->getAllPointLights())
+	{
+		PointLightUniforms pointLightUniform;
+		pointLightUniform.light.position = Utils::SponzaToGLMVec3(light.getPosition());
+		pointLightUniform.light.range = light.getRange();
+		pointLightUniform.light.intensity = Utils::SponzaToGLMVec3(light.getIntensity());
+
+		// Memcopying the data for the per frame uniforms.
+		glBindBuffer(GL_UNIFORM_BUFFER, pointPassPointLightUniformsUBO);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(pointLightUniform), &pointLightUniform);
+
+		// Drawing the sponza meshes.
+		for (auto mesh : sponzaMeshes)
+		{
+			int meshID = mesh.first;
+			auto instanceIDs = scene_->getInstancesByMeshId(meshID);
+			int instanceCount = instanceIDs.size();
+
+			// Loop through the instances and populate the uniform buffer block.
+			for (int i = 0; i < instanceCount; i++)
+			{
+				auto instance = scene_->getInstanceById(instanceIDs[i]);
+
+				// Setting the xforms in the uniform buffer.
+				perModelUniforms.instances[i].modelXform = Utils::SponzaMat3ToGLMMat4(instance.getTransformationMatrix());
+				perModelUniforms.instances[i].mvpXform = projection * view * perModelUniforms.instances[i].modelXform;
+
+				// Setting the material properties in the uniform buffer.
+				auto material = scene_->getMaterialById(instance.getMaterialId());
+				perModelUniforms.instances[i].diffuse = Utils::SponzaToGLMVec3(material.getDiffuseColour());
+				perModelUniforms.instances[i].shininess = material.getShininess();
+				perModelUniforms.instances[i].specular = Utils::SponzaToGLMVec3(material.getSpecularColour());
+				perModelUniforms.instances[i].isShiny = material.isShiny();
+			}
+
+			glBindBuffer(GL_UNIFORM_BUFFER, pointPassPerModelUniformsUBO);
+			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perModelUniforms), &perModelUniforms);
+
+			setShaderTexture("resource:///marble.png", pointLightShaderProgram, "cpp_Texture", GL_TEXTURE0, 0);
+
+			// Drawing the instance.
+			glBindVertexArray(mesh.second.vao);
+			glDrawElementsInstanced(GL_TRIANGLES, mesh.second.elementCount, GL_UNSIGNED_INT, 0, instanceCount);
+			glBindVertexArray(0);
+		}
+
+		// Drawing the friends meshes.
+		for (auto mesh : friendsMeshes)
+		{
+			int meshID = mesh.first;
+			auto instanceIDs = scene_->getInstancesByMeshId(meshID);
+			int instanceCount = instanceIDs.size();
+
+			// Loop through the instances and populate the uniform buffer block.
+			for (int i = 0; i < instanceCount; i++)
+			{
+				auto instance = scene_->getInstanceById(instanceIDs[i]);
+
+				// Setting the xforms in the uniform buffer.
+				perModelUniforms.instances[i].modelXform = Utils::SponzaMat3ToGLMMat4(instance.getTransformationMatrix());
+				perModelUniforms.instances[i].mvpXform = projection * view * perModelUniforms.instances[i].modelXform;
+
+				// Setting the material properties in the uniform buffer.
+				auto material = scene_->getMaterialById(instance.getMaterialId());
+				perModelUniforms.instances[i].diffuse = Utils::SponzaToGLMVec3(material.getDiffuseColour());
+				perModelUniforms.instances[i].shininess = material.getShininess();
+				perModelUniforms.instances[i].specular = Utils::SponzaToGLMVec3(material.getSpecularColour());
+				perModelUniforms.instances[i].isShiny = material.isShiny();
+			}
+
+			glBindBuffer(GL_UNIFORM_BUFFER, pointPassPerModelUniformsUBO);
+			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perModelUniforms), &perModelUniforms);
+
+			// Drawing the instance.
+			glBindVertexArray(mesh.second.vao);
+			glDrawElementsInstanced(GL_TRIANGLES, mesh.second.elementCount, GL_UNSIGNED_INT, 0, instanceCount);
+			glBindVertexArray(0);
+		}
+	}
+
+
+
+
+
+
+
+	// -----------------Spot Light pass-----------------
+
+	glUseProgram(spotLightShaderProgram);
+
+	glEnable(GL_DEPTH_TEST);
+
+	glDepthMask(GL_FALSE);
+
+	glDepthFunc(GL_EQUAL);
+
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+	glEnable(GL_BLEND);
+
+	glBlendEquation(GL_FUNC_ADD);
+
+	glBlendFunc(GL_ONE, GL_ONE);
+
+	// Memcopying the data for the per frame uniforms.
+	glBindBuffer(GL_UNIFORM_BUFFER, spotPassPerFrameUniformsUBO);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perFrameUniforms), &perFrameUniforms);
+
+	for (auto light : scene_->getAllSpotLights())
+	{
+		SpotLightUniforms spotLightUniform;
+		spotLightUniform.light.position = Utils::SponzaToGLMVec3(light.getPosition());
+		spotLightUniform.light.range = light.getRange();
+		spotLightUniform.light.intensity = Utils::SponzaToGLMVec3(light.getIntensity());
+		spotLightUniform.light.angle = light.getConeAngleDegrees();
+		spotLightUniform.light.direction = Utils::SponzaToGLMVec3(light.getDirection());
+
+		// Memcopying the data for the per frame uniforms.
+		glBindBuffer(GL_UNIFORM_BUFFER, spotPassSpotLightUniformsUBO);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(spotLightUniform), &spotLightUniform);
+
+		// Drawing the sponza meshes.
+		for (auto mesh : sponzaMeshes)
+		{
+			int meshID = mesh.first;
+			auto instanceIDs = scene_->getInstancesByMeshId(meshID);
+			int instanceCount = instanceIDs.size();
+
+			// Loop through the instances and populate the uniform buffer block.
+			for (int i = 0; i < instanceCount; i++)
+			{
+				auto instance = scene_->getInstanceById(instanceIDs[i]);
+
+				// Setting the xforms in the uniform buffer.
+				perModelUniforms.instances[i].modelXform = Utils::SponzaMat3ToGLMMat4(instance.getTransformationMatrix());
+				perModelUniforms.instances[i].mvpXform = projection * view * perModelUniforms.instances[i].modelXform;
+
+				// Setting the material properties in the uniform buffer.
+				auto material = scene_->getMaterialById(instance.getMaterialId());
+				perModelUniforms.instances[i].diffuse = Utils::SponzaToGLMVec3(material.getDiffuseColour());
+				perModelUniforms.instances[i].shininess = material.getShininess();
+				perModelUniforms.instances[i].specular = Utils::SponzaToGLMVec3(material.getSpecularColour());
+				perModelUniforms.instances[i].isShiny = material.isShiny();
+			}
+
+			glBindBuffer(GL_UNIFORM_BUFFER, spotPassPerModelUniformsUBO);
+			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perModelUniforms), &perModelUniforms);
+
+			setShaderTexture("resource:///marble.png", spotLightShaderProgram, "cpp_Texture", GL_TEXTURE0, 0);
+
+			// Drawing the instance.
+			glBindVertexArray(mesh.second.vao);
+			glDrawElementsInstanced(GL_TRIANGLES, mesh.second.elementCount, GL_UNSIGNED_INT, 0, instanceCount);
+			glBindVertexArray(0);
+		}
+
+		// Drawing the friends meshes.
+		for (auto mesh : friendsMeshes)
+		{
+			int meshID = mesh.first;
+			auto instanceIDs = scene_->getInstancesByMeshId(meshID);
+			int instanceCount = instanceIDs.size();
+
+			// Loop through the instances and populate the uniform buffer block.
+			for (int i = 0; i < instanceCount; i++)
+			{
+				auto instance = scene_->getInstanceById(instanceIDs[i]);
+
+				// Setting the xforms in the uniform buffer.
+				perModelUniforms.instances[i].modelXform = Utils::SponzaMat3ToGLMMat4(instance.getTransformationMatrix());
+				perModelUniforms.instances[i].mvpXform = projection * view * perModelUniforms.instances[i].modelXform;
+
+				// Setting the material properties in the uniform buffer.
+				auto material = scene_->getMaterialById(instance.getMaterialId());
+				perModelUniforms.instances[i].diffuse = Utils::SponzaToGLMVec3(material.getDiffuseColour());
+				perModelUniforms.instances[i].shininess = material.getShininess();
+				perModelUniforms.instances[i].specular = Utils::SponzaToGLMVec3(material.getSpecularColour());
+				perModelUniforms.instances[i].isShiny = material.isShiny();
+			}
+
+			glBindBuffer(GL_UNIFORM_BUFFER, spotPassPerModelUniformsUBO);
+			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(perModelUniforms), &perModelUniforms);
+
+			// Drawing the instance.
+			glBindVertexArray(mesh.second.vao);
+			glDrawElementsInstanced(GL_TRIANGLES, mesh.second.elementCount, GL_UNSIGNED_INT, 0, instanceCount);
+			glBindVertexArray(0);
+		}
+	}
+	
+
+	
 
 
 	
@@ -509,17 +826,91 @@ bool MyView::setShaderTexture(std::string name, GLuint shaderProgram, std::strin
 
 void MyView::createUniformBufferObjects()
 {
+	//-------------------------Ambient Pass-------------------------
+
 	// Creating per frame uniform buffer object.
-	glGenBuffers(1, &perFrameUniformsUBO);
-	glBindBuffer(GL_UNIFORM_BUFFER, perFrameUniformsUBO);
+	glGenBuffers(1, &ambPassPerFrameUniformsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, ambPassPerFrameUniformsUBO);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(PerFrameUniforms), nullptr, GL_STREAM_DRAW);
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, perFrameUniformsUBO);
-	glUniformBlockBinding(shaderProgram, glGetUniformBlockIndex(shaderProgram, "cpp_PerFrameUniforms"), 0);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, ambPassPerFrameUniformsUBO);
+	glUniformBlockBinding(ambientShaderProgram, glGetUniformBlockIndex(ambientShaderProgram, "cpp_PerFrameUniforms"), 0);
 
 	// Creating per model uniform buffer object.
-	glGenBuffers(1, &perModelUniformsUBO);
-	glBindBuffer(GL_UNIFORM_BUFFER, perModelUniformsUBO);
+	glGenBuffers(1, &ambPassPerModelUniformsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, ambPassPerModelUniformsUBO);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(PerModelUniforms), nullptr, GL_STREAM_DRAW);
-	glBindBufferBase(GL_UNIFORM_BUFFER, 1, perModelUniformsUBO);
-	glUniformBlockBinding(shaderProgram, glGetUniformBlockIndex(shaderProgram, "cpp_PerModelUniforms"), 1);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 1, ambPassPerModelUniformsUBO);
+	glUniformBlockBinding(ambientShaderProgram, glGetUniformBlockIndex(ambientShaderProgram, "cpp_PerModelUniforms"), 1);
+
+
+	//-------------------------Directional Light Pass-------------------------
+
+	// Creating directional light uniform buffer object.
+	glGenBuffers(1, &dirPassDirLightUniformsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, dirPassDirLightUniformsUBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(PerModelUniforms), nullptr, GL_STREAM_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 2, dirPassDirLightUniformsUBO);
+	glUniformBlockBinding(directionalLightShaderProgram, glGetUniformBlockIndex(directionalLightShaderProgram, "cpp_DirectionalLightUniforms"), 2);
+
+	// Creating per frame uniform buffer object.
+	glGenBuffers(1, &dirPassPerFrameUniformsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, dirPassPerFrameUniformsUBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(PerFrameUniforms), nullptr, GL_STREAM_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 3, dirPassPerFrameUniformsUBO);
+	glUniformBlockBinding(directionalLightShaderProgram, glGetUniformBlockIndex(directionalLightShaderProgram, "cpp_PerFrameUniforms"), 3);
+
+	// Creating per model uniform buffer object.
+	glGenBuffers(1, &dirPassPerModelUniformsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, dirPassPerModelUniformsUBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(PerModelUniforms), nullptr, GL_STREAM_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 4, dirPassPerModelUniformsUBO);
+	glUniformBlockBinding(directionalLightShaderProgram, glGetUniformBlockIndex(directionalLightShaderProgram, "cpp_PerModelUniforms"), 4);
+
+
+	//-------------------------Point Light Pass-------------------------
+
+	// Creating point light uniform buffer object.
+	glGenBuffers(1, &pointPassPointLightUniformsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, pointPassPointLightUniformsUBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(PerModelUniforms), nullptr, GL_STREAM_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 5, pointPassPointLightUniformsUBO);
+	glUniformBlockBinding(pointLightShaderProgram, glGetUniformBlockIndex(pointLightShaderProgram, "cpp_PointLightUniforms"), 5);
+
+	// Creating per frame uniform buffer object.
+	glGenBuffers(1, &pointPassPerFrameUniformsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, pointPassPerFrameUniformsUBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(PerFrameUniforms), nullptr, GL_STREAM_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 6, pointPassPerFrameUniformsUBO);
+	glUniformBlockBinding(pointLightShaderProgram, glGetUniformBlockIndex(pointLightShaderProgram, "cpp_PerFrameUniforms"), 6);
+
+	// Creating per model uniform buffer object.
+	glGenBuffers(1, &pointPassPerModelUniformsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, pointPassPerModelUniformsUBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(PerModelUniforms), nullptr, GL_STREAM_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 7, pointPassPerModelUniformsUBO);
+	glUniformBlockBinding(pointLightShaderProgram, glGetUniformBlockIndex(pointLightShaderProgram, "cpp_PerModelUniforms"), 7);
+
+
+	//-------------------------Spot Light Pass-------------------------
+
+	// Creating spot light uniform buffer object.
+	glGenBuffers(1, &spotPassSpotLightUniformsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, spotPassSpotLightUniformsUBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(PerModelUniforms), nullptr, GL_STREAM_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 8, spotPassSpotLightUniformsUBO);
+	glUniformBlockBinding(spotLightShaderProgram, glGetUniformBlockIndex(spotLightShaderProgram, "cpp_SpotLightUniforms"), 8);
+
+	// Creating per frame uniform buffer object.
+	glGenBuffers(1, &spotPassPerFrameUniformsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, spotPassPerFrameUniformsUBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(PerFrameUniforms), nullptr, GL_STREAM_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 9, spotPassPerFrameUniformsUBO);
+	glUniformBlockBinding(spotLightShaderProgram, glGetUniformBlockIndex(spotLightShaderProgram, "cpp_PerFrameUniforms"), 9);
+
+	// Creating per model uniform buffer object.
+	glGenBuffers(1, &spotPassPerModelUniformsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, spotPassPerModelUniformsUBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(PerModelUniforms), nullptr, GL_STREAM_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 10, spotPassPerModelUniformsUBO);
+	glUniformBlockBinding(spotLightShaderProgram, glGetUniformBlockIndex(spotLightShaderProgram, "cpp_PerModelUniforms"), 10);
 }
