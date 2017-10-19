@@ -32,7 +32,6 @@ void MyController::windowControlWillStart(tygra::Window * window)
     std::cout << "Real-Time Graphics :: RepriseMySponza" << std::endl;
 	std::cout << "*************************************\n" << std::endl;
     std::cout << "  F2 - Toggle an animated camera" << std::endl;
-	std::cout << "  F5 - Recompile shaders" << std::endl;
 	std::cout << std::endl;
 }
 

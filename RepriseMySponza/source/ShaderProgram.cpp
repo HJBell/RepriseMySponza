@@ -20,6 +20,11 @@ ShaderProgram::~ShaderProgram()
 
 //--------------------------------Public Functions--------------------------------
 
+void ShaderProgram::Use() const
+{
+	glUseProgram(mProgramID);
+}
+
 void ShaderProgram::Init(std::string vertexShaderPath, std::string fragmentShaderPath)
 {
 	// Load the shaders.
@@ -43,11 +48,6 @@ void ShaderProgram::Init(std::string vertexShaderPath, std::string fragmentShade
 		glGetShaderInfoLog(mProgramID, infoLogLength, NULL, &infoLog[0]);
 		std::cerr << "Error compiling shader program : " << std::endl << &infoLog[0] << std::endl;
 	}
-}
-
-void ShaderProgram::Use() const
-{
-	glUseProgram(mProgramID);
 }
 
 void ShaderProgram::CreateUniformBuffer(std::string name, GLsizeiptr size, int index)

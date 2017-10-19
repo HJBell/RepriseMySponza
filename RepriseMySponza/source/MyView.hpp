@@ -116,6 +116,12 @@ struct SpotLightUniforms
 	SpotLight light;
 };
 
+struct SkyboxUniforms
+{
+	glm::mat4 viewProjectionXform;
+	glm::vec3 cameraPos;
+};
+
 
 //----------------------MyView----------------------
 
@@ -138,12 +144,19 @@ private: // Members.
 	std::map<sponza::MeshId, FriendsMeshGL> friendsMeshes;
 	std::map<std::string, GLuint> textures;
 
+	ShaderProgram mSkyboxShaderProgram;
+	GLuint mSkyboxTexture;
+	GLuint mSkyboxPositionVBO;
+	GLuint mSkyboxVAO;
+
 private: // Functions.
     void windowViewWillStart(tygra::Window * window) override;
     void windowViewDidReset(tygra::Window * window, int width, int height) override;
     void windowViewDidStop(tygra::Window * window) override;
     void windowViewRender(tygra::Window * window) override;
-	void loadMeshData();
-	void loadTexture(std::string name);
+	void LoadMeshData();
+	void LoadTexture(std::string name);
 };
+
+
 

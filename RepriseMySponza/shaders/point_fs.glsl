@@ -57,7 +57,7 @@ flat in int vs_InstanceID;
 out vec4 fs_Colour;
 
 
-//----------------------Main Function----------------------
+//----------------------Apply Point Light Function----------------------
 
 vec4 ApplyPointLight(PointLight light)
 {
@@ -111,6 +111,9 @@ vec4 ApplyPointLight(PointLight light)
 	// Returning the colour.
 	return colour;
 }
+
+
+//----------------------Main Function----------------------
 
 void main(void)
 {
