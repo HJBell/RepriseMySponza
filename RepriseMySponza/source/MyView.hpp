@@ -8,6 +8,7 @@
 #include <vector>
 #include <memory>
 #include <map>
+#include "ShaderProgram.hpp"
 
 #define MAX_LIGHT_COUNT 32
 #define MAX_INSTANCE_COUNT 64
@@ -128,41 +129,21 @@ public: // Functions.
 private: // Members.
 	const sponza::Context * scene_;
 
-	GLuint ambientShaderProgram;
-	GLuint directionalLightShaderProgram;
-	GLuint pointLightShaderProgram;
-	GLuint spotLightShaderProgram;
-
+	ShaderProgram mAmbShaderProgram;
+	ShaderProgram mDirShaderProgram;
+	ShaderProgram mPointShaderProgram;
+	ShaderProgram mSpotShaderProgram;
 
 	std::map<sponza::MeshId, SponzaMeshGL> sponzaMeshes;
 	std::map<sponza::MeshId, FriendsMeshGL> friendsMeshes;
 	std::map<std::string, GLuint> textures;
-
-	GLuint ambPassPerFrameUniformsUBO;
-	GLuint ambPassPerModelUniformsUBO;
-
-	GLuint dirPassDirLightUniformsUBO;
-	GLuint dirPassPerFrameUniformsUBO;
-	GLuint dirPassPerModelUniformsUBO;
-
-	GLuint pointPassPointLightUniformsUBO;
-	GLuint pointPassPerFrameUniformsUBO;
-	GLuint pointPassPerModelUniformsUBO;
-
-	GLuint spotPassSpotLightUniformsUBO;
-	GLuint spotPassPerFrameUniformsUBO;
-	GLuint spotPassPerModelUniformsUBO;
 
 private: // Functions.
     void windowViewWillStart(tygra::Window * window) override;
     void windowViewDidReset(tygra::Window * window, int width, int height) override;
     void windowViewDidStop(tygra::Window * window) override;
     void windowViewRender(tygra::Window * window) override;
-	GLuint loadShaderProgram(std::string vertexShaderPath, std::string fragmentShaderPath) const;
-	GLuint loadShader(std::string shaderPath, GLuint shaderType) const;
 	void loadMeshData();
 	void loadTexture(std::string name);
-	bool setShaderTexture(std::string name, GLuint shaderProgram, std::string targetName, GLenum activeTexture, int index);
-	void createUniformBufferObjects();
 };
 
