@@ -1,4 +1,2 @@
 ﻿  tgl.c
   tgl.vcxproj -> C:\Users\p4014518\Desktop\RepriseMySponza\build\lib\x64\Debug\v141\tgl.lib
-  Copying doc files to build directory... doc\tgl-license.txt;doc\tgl.lib.props
-  Copying include files to build directory... include\GL3\gl3.h;include\GL\glcorearb.h;include\GL\glext.h;include\GL\glxext.h;include\GL\wglext.h;include\tgl\tgl.h

@@ -27,6 +27,11 @@ void MyView::setScene(const sponza::Context * sponza)
     scene_ = sponza;
 }
 
+void MyView::ToggleSkybox()
+{
+	mRenderSkybox = !mRenderSkybox;
+}
+
 
 //------------------------------------------Private Functions-----------------------------------------
 
@@ -70,12 +75,12 @@ void MyView::windowViewWillStart(tygra::Window * window)
 
 	glm::vec3 SkyBoxVertices[36] =
 	{
-		glm::vec3(1.0f, -1.0f, -1.0f), glm::vec3(1.0f, -1.0f,  1.0f), glm::vec3(1.0f,  1.0f,  1.0f), glm::vec3(1.0f,  1.0f,  1.0f), glm::vec3(1.0f,  1.0f, -1.0f), glm::vec3(1.0f, -1.0f, -1.0f),
-		glm::vec3(-1.0f, -1.0f,  1.0f), glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec3(-1.0f, -1.0f,  1.0f),
-		glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec3(1.0f,  1.0f, -1.0f), glm::vec3(1.0f,  1.0f,  1.0f), glm::vec3(1.0f,  1.0f,  1.0f), glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec3(-1.0f,  1.0f, -1.0f),
-		glm::vec3(-1.0f, -1.0f,  1.0f), glm::vec3(1.0f, -1.0f,  1.0f), glm::vec3(1.0f, -1.0f, -1.0f), glm::vec3(1.0f, -1.0f, -1.0f), glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(-1.0f, -1.0f,  1.0f),
-		glm::vec3(1.0f, -1.0f,  1.0f), glm::vec3(-1.0f, -1.0f,  1.0f), glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec3(1.0f,  1.0f,  1.0f), glm::vec3(1.0f, -1.0f,  1.0f),
-		glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(1.0f, -1.0f, -1.0f), glm::vec3(1.0f,  1.0f, -1.0f), glm::vec3(1.0f,  1.0f, -1.0f), glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec3(-1.0f, -1.0f, -1.0f)
+		glm::vec3(10.0f, -10.0f, -10.0f), glm::vec3(10.0f, -10.0f,  10.0f), glm::vec3(10.0f,  10.0f,  10.0f), glm::vec3(10.0f,  10.0f,  10.0f), glm::vec3(10.0f,  10.0f, -10.0f), glm::vec3(10.0f, -10.0f, -10.0f),
+		glm::vec3(-10.0f, -10.0f,  10.0f), glm::vec3(-10.0f, -10.0f, -10.0f), glm::vec3(-10.0f,  10.0f, -10.0f), glm::vec3(-10.0f,  10.0f, -10.0f), glm::vec3(-10.0f,  10.0f,  10.0f), glm::vec3(-10.0f, -10.0f,  10.0f),
+		glm::vec3(-10.0f,  10.0f, -10.0f), glm::vec3(10.0f,  10.0f, -10.0f), glm::vec3(10.0f,  10.0f,  10.0f), glm::vec3(10.0f,  10.0f,  10.0f), glm::vec3(-10.0f,  10.0f,  10.0f), glm::vec3(-10.0f,  10.0f, -10.0f),
+		glm::vec3(-10.0f, -10.0f,  10.0f), glm::vec3(10.0f, -10.0f,  10.0f), glm::vec3(10.0f, -10.0f, -10.0f), glm::vec3(10.0f, -10.0f, -10.0f), glm::vec3(-10.0f, -10.0f, -10.0f), glm::vec3(-10.0f, -10.0f,  10.0f),
+		glm::vec3(10.0f, -10.0f,  10.0f), glm::vec3(-10.0f, -10.0f,  10.0f), glm::vec3(-10.0f,  10.0f,  10.0f), glm::vec3(-10.0f,  10.0f,  10.0f), glm::vec3(10.0f,  10.0f,  10.0f), glm::vec3(10.0f, -10.0f,  10.0f),
+		glm::vec3(-10.0f, -10.0f, -10.0f), glm::vec3(10.0f, -10.0f, -10.0f), glm::vec3(10.0f,  10.0f, -10.0f), glm::vec3(10.0f,  10.0f, -10.0f), glm::vec3(-10.0f,  10.0f, -10.0f), glm::vec3(-10.0f, -10.0f, -10.0f)
 	};
 
 
@@ -98,51 +103,6 @@ void MyView::windowViewWillStart(tygra::Window * window)
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-
-	//// Create the vertex array object.
-	//glGenVertexArrays(1, &friendsMeshes[mesh.getId()].vao);
-	//glBindVertexArray(friendsMeshes[mesh.getId()].vao);
-
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, friendsMeshes[mesh.getId()].elementVBO);
-
-	//glBindBuffer(GL_ARRAY_BUFFER, friendsMeshes[mesh.getId()].positionVBO);
-	//glEnableVertexAttribArray(0);
-	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), TGL_BUFFER_OFFSET(0));
-
-	//glBindBuffer(GL_ARRAY_BUFFER, friendsMeshes[mesh.getId()].normalVBO);
-	//glEnableVertexAttribArray(1);
-	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), TGL_BUFFER_OFFSET(0));
-
-	//glBindVertexArray(0);
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	//// Break the mesh down into its components.
-	//const auto& positions = mesh.getPositionArray();
-	//const auto& normals = mesh.getNormalArray();
-	//const auto& elements = mesh.getElementArray();
-
-	//// Create the position vertex buffer object.
-	//glGenBuffers(1, &friendsMeshes[mesh.getId()].positionVBO);
-	//glBindBuffer(GL_ARRAY_BUFFER, friendsMeshes[mesh.getId()].positionVBO);
-	//glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(glm::vec3), positions.data(), GL_STATIC_DRAW);
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	//// Create the normal vertex buffer object.
-	//glGenBuffers(1, &friendsMeshes[mesh.getId()].normalVBO);
-	//glBindBuffer(GL_ARRAY_BUFFER, friendsMeshes[mesh.getId()].normalVBO);
-	//glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW);
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	//// Create the element vertex buffer object.
-	//glGenBuffers(1, &friendsMeshes[mesh.getId()].elementVBO);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, friendsMeshes[mesh.getId()].elementVBO);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements.size() * sizeof(unsigned int), elements.data(), GL_STATIC_DRAW);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	//friendsMeshes[mesh.getId()].elementCount = elements.size();
-
-	
-
-
 	glGenTextures(1, &mSkyboxTexture);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, mSkyboxTexture);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -152,7 +112,7 @@ void MyView::windowViewWillStart(tygra::Window * window)
 	//glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 	for (size_t i = 0; i < 6; ++i) {
-		const std::string url = "resource:///skybox_" + std::to_string(i) + ".png";
+		const std::string url = "resource:///skybox_stormy_" + std::to_string(i) + ".png";
 		tygra::Image img = tygra::createImageFromPngFile(url);
 		if (!img.doesContainData()) {
 			throw std::runtime_error("failed to load " + url);
@@ -167,8 +127,6 @@ void MyView::windowViewWillStart(tygra::Window * window)
 	// tell GL to wrap on the edges to neighbouring faces
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-
-	
 
 	// Setting the polygon rasterization mode.
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -257,21 +215,24 @@ void MyView::windowViewRender(tygra::Window * window)
 
 	// --------------------Skybox--------------------
 
-	mSkyboxShaderProgram.Use();	
-	glDisable(GL_DEPTH_TEST);
-	//glDisable(GL_CULL_FACE);
+	if (mRenderSkybox)
+	{
+		mSkyboxShaderProgram.Use();
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_BLEND);
 
-	SkyboxUniforms skyboxUniforms;
-	skyboxUniforms.cameraPos = Utils::SponzaToGLMVec3(camera.getPosition());
-	skyboxUniforms.viewProjectionXform = projection * view;
-	mSkyboxShaderProgram.SetUniformBuffer("cpp_SkyboxUniforms", &skyboxUniforms, sizeof(skyboxUniforms));
+		SkyboxUniforms skyboxUniforms;
+		skyboxUniforms.cameraPos = Utils::SponzaToGLMVec3(camera.getPosition());
+		skyboxUniforms.viewProjectionXform = projection * view;
+		mSkyboxShaderProgram.SetUniformBuffer("cpp_SkyboxUniforms", &skyboxUniforms, sizeof(skyboxUniforms));
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, mSkyboxTexture);
-	glBindVertexArray(mSkyboxVAO);
-	glDrawArrays(GL_TRIANGLES, 0, 36);
-	glBindVertexArray(0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, mSkyboxTexture);
+		glBindVertexArray(mSkyboxVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+	}	
 
 
 	// --------------------Populating the per model uniform buffers--------------------

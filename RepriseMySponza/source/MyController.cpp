@@ -32,6 +32,7 @@ void MyController::windowControlWillStart(tygra::Window * window)
     std::cout << "Real-Time Graphics :: RepriseMySponza" << std::endl;
 	std::cout << "*************************************\n" << std::endl;
     std::cout << "  F2 - Toggle an animated camera" << std::endl;
+	std::cout << "  F3 - Toggle skybox" << std::endl;
 	std::cout << std::endl;
 }
 
@@ -113,6 +114,9 @@ void MyController::windowControlKeyboardChanged(tygra::Window * window,
     case tygra::kWindowKeyF2:
         scene_->toggleCameraAnimation();
         break;
+	case tygra::kWindowKeyF3:
+		view_->ToggleSkybox();
+		break;
 	case tygra::kWindowKeyEsc:
 		window->close();
 		break;

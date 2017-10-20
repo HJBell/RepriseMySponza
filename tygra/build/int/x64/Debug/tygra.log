@@ -1,8 +1,1 @@
-﻿  Window.cpp
-  No target GL version declared, defaulting to GL 3.3
-  For example, use #define TGL_TARGET_GL_4_1 before including tgl.h to specify OpenGL 4.1
-  FileHelper.cpp
-  Generating Code...
-  tygra.vcxproj -> C:\Users\p4014518\Desktop\RepriseMySponza\build\lib\x64\Debug\v141\tygra.lib
-  Copying doc files to build directory... doc\tygra-license.txt;doc\tygra.lib.props;doc\tygra.lib.targets;doc\tygra.vars.props;doc\tygra.xml
-  Copying include files to build directory... include\tygra\FileHelper.hpp;include\tygra\Image.hpp;include\tygra\Window.hpp;include\tygra\WindowControlDelegate.hpp;include\tygra\WindowViewDelegate.hpp
+﻿  tygra.vcxproj -> C:\Users\p4014518\Desktop\RepriseMySponza\build\lib\x64\Debug\v141\tygra.lib

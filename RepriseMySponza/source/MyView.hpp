@@ -131,6 +131,7 @@ public: // Functions.
     MyView();
     ~MyView();
     void setScene(const sponza::Context * sponza);
+	void ToggleSkybox();
 
 private: // Members.
 	const sponza::Context * scene_;
@@ -144,6 +145,7 @@ private: // Members.
 	std::map<sponza::MeshId, FriendsMeshGL> friendsMeshes;
 	std::map<std::string, GLuint> textures;
 
+	bool mRenderSkybox = false;
 	ShaderProgram mSkyboxShaderProgram;
 	GLuint mSkyboxTexture;
 	GLuint mSkyboxPositionVBO;
