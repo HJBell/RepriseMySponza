@@ -2,19 +2,9 @@
   No target GL version declared, defaulting to GL 3.3
   For example, use #define TGL_TARGET_GL_4_1 before including tgl.h to specify OpenGL 4.1
 source\MyView.cpp(2): warning C4067: unexpected tokens following preprocessor directive - expected a newline
-source\MyView.cpp(123): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
-source\MyView.cpp(123): warning C4267: 'argument': conversion from 'size_t' to 'GLenum', possible loss of data
-source\MyView.cpp(245): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-source\MyView.cpp(274): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-source\MyView.cpp(317): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-source\MyView.cpp(335): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-source\MyView.cpp(375): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-source\MyView.cpp(393): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-source\MyView.cpp(428): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-source\MyView.cpp(446): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-source\MyView.cpp(483): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-source\MyView.cpp(501): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-source\MyView.cpp(548): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-source\MyView.cpp(593): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-source\MyView.cpp(657): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
+source\MyView.cpp(125): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
+source\MyView.cpp(125): warning C4267: 'argument': conversion from 'size_t' to 'GLenum', possible loss of data
+source\MyView.cpp(232): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+source\MyView.cpp(366): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
+source\MyView.cpp(381): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
   RepriseMySponza.vcxproj -> C:\Users\p4014518\Desktop\RepriseMySponza\build\bin\x64\Debug\RepriseMySponza.exe

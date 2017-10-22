@@ -9,46 +9,13 @@
 #include <memory>
 #include <map>
 #include "ShaderProgram.hpp"
+#include "MeshData.hpp"
 
 #define MAX_LIGHT_COUNT 32
 #define MAX_INSTANCE_COUNT 64
 
 
 //----------------------Structures----------------------
-
-struct FriendsMeshGL
-{
-	GLuint positionVBO;
-	GLuint normalVBO;
-	GLuint elementVBO;
-	GLuint vao;
-	int elementCount;
-
-	FriendsMeshGL() :
-		positionVBO(0),
-		normalVBO(0),
-		elementVBO(0),
-		vao(0),
-		elementCount(0) {}
-};
-
-struct SponzaMeshGL
-{
-	GLuint positionVBO;
-	GLuint normalVBO;
-	GLuint textureCoordVBO;
-	GLuint elementVBO;
-	GLuint vao;
-	int elementCount;
-
-	SponzaMeshGL() :
-		positionVBO(0),
-		normalVBO(0),
-		textureCoordVBO(0),
-		elementVBO(0),
-		vao(0),
-		elementCount(0) {}
-};
 
 struct DirectionalLight
 {
@@ -127,37 +94,39 @@ struct SkyboxUniforms
 
 class MyView : public tygra::WindowViewDelegate
 {
-public: // Functions.
+public:
     MyView();
     ~MyView();
+
     void setScene(const sponza::Context * sponza);
 	void ToggleSkybox();
 
-private: // Members.
+private:
 	const sponza::Context * scene_;
 
+	ShaderProgram mSkyboxShaderProgram;
 	ShaderProgram mAmbShaderProgram;
 	ShaderProgram mDirShaderProgram;
 	ShaderProgram mPointShaderProgram;
 	ShaderProgram mSpotShaderProgram;
 
-	std::map<sponza::MeshId, SponzaMeshGL> sponzaMeshes;
-	std::map<sponza::MeshId, FriendsMeshGL> friendsMeshes;
-	std::map<std::string, GLuint> textures;
+	std::map<sponza::MeshId, MeshData> mMeshes;
+	std::map<std::string, GLuint> mTextures;
 
 	bool mRenderSkybox = false;
-	ShaderProgram mSkyboxShaderProgram;
+	
 	GLuint mSkyboxTexture;
 	GLuint mSkyboxPositionVBO;
 	GLuint mSkyboxVAO;
 
-private: // Functions.
+	std::vector<PerModelUniforms> perModelUniforms;
+
     void windowViewWillStart(tygra::Window * window) override;
     void windowViewDidReset(tygra::Window * window, int width, int height) override;
     void windowViewDidStop(tygra::Window * window) override;
-    void windowViewRender(tygra::Window * window) override;
-	void LoadMeshData();
+    void windowViewRender(tygra::Window * window) override;	
 	void LoadTexture(std::string name);
+	void DrawMeshesInstanced(ShaderProgram& shaderProgram);
 };
 
 
